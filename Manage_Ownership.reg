@@ -1,0 +1,22 @@
+Windows Registry Editor Version 5.00
+
+; ==============================================================
+; 🔵 Unified Ownership Menu (PowerShell 7 Edition)
+; ==============================================================
+
+[HKEY_CURRENT_USER\Software\Classes\*\shell\Z_ManageOwnership]
+@="Manage Ownership 🛡️"
+"Icon"="imageres.dll,-5324"
+"NoWorkingDirectory"=""
+
+[HKEY_CURRENT_USER\Software\Classes\*\shell\Z_ManageOwnership\command]
+; ⚠️ Change: Uses 'pwsh' and explicitly passes '-TargetFile'
+@="wscript.exe \"D:\\Users\\joty79\\scripts\\TakeOwnership\\SilentOwnership.vbs\" \"%1\""
+
+[HKEY_CURRENT_USER\Software\Classes\Directory\shell\Z_ManageOwnership]
+@="Manage Ownership 🛡️"
+"Icon"="imageres.dll,-5324"
+"NoWorkingDirectory"=""
+
+[HKEY_CURRENT_USER\Software\Classes\Directory\shell\Z_ManageOwnership\command]
+@="wscript.exe \"D:\\Users\\joty79\\scripts\\TakeOwnership\\SilentOwnership.vbs\" \"%1\""
