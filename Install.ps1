@@ -222,7 +222,14 @@ function RegGet([string]$Key, [string]$Name) {
 
 function CleanupRegistry {
     foreach ($k in (Arr 'registry_cleanup_keys')) {
-        try { RegDel $k } catch { Log "Failed to remove key: $k" 'WARN' }
+        try {
+            RegDel $k
+        }
+        catch {
+            $errText = [string]$_.Exception.Message
+            if ($k -like 'HKCR\*' -and $errText -match 'Access is denied') { continue }
+            Log "Failed to remove key: $k" 'WARN'
+        }
     }
 }
 function WriteRegistry([string]$InstallRoot) {
