@@ -1,22 +1,45 @@
 Windows Registry Editor Version 5.00
 
-; ==============================================================
-; 🔵 Unified Ownership Menu (PowerShell 7 Edition)
-; ==============================================================
+; Cleanup legacy/current verb keys (safe: delete only if key exists)
+[-HKEY_CURRENT_USER\Software\Classes\*\shell\Z_ManageOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\Directory\shell\Z_ManageOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\*\shell\ManageOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\Directory\shell\ManageOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\*\shell\SystemTools\shell\TakeOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\Directory\shell\SystemTools\shell\TakeOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\*\shell\SystemTools\shell\ManageOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\Directory\shell\SystemTools\shell\ManageOwnership]
+[-HKEY_CLASSES_ROOT\*\shell\Z_ManageOwnership]
+[-HKEY_CLASSES_ROOT\Directory\shell\Z_ManageOwnership]
+[-HKEY_CLASSES_ROOT\*\shell\ManageOwnership]
+[-HKEY_CLASSES_ROOT\Directory\shell\ManageOwnership]
+[-HKEY_CLASSES_ROOT\*\shell\SystemTools\shell\TakeOwnership]
+[-HKEY_CLASSES_ROOT\Directory\shell\SystemTools\shell\TakeOwnership]
+[-HKEY_CLASSES_ROOT\*\shell\SystemTools\shell\ManageOwnership]
+[-HKEY_CLASSES_ROOT\Directory\shell\SystemTools\shell\ManageOwnership]
 
-[HKEY_CURRENT_USER\Software\Classes\*\shell\Z_ManageOwnership]
-@="Manage Ownership 🛡️"
+[HKEY_CURRENT_USER\Software\Classes\*\shell\SystemTools]
+"MUIVerb"="System Tools"
+"SubCommands"=""
+"Icon"="imageres.dll,-109"
+
+[HKEY_CURRENT_USER\Software\Classes\*\shell\SystemTools\shell\TakeOwnership]
+"MUIVerb"="Manage Ownership 🛡️"
 "Icon"="imageres.dll,-5324"
 "NoWorkingDirectory"=""
 
-[HKEY_CURRENT_USER\Software\Classes\*\shell\Z_ManageOwnership\command]
-; ⚠️ Change: Uses 'pwsh' and explicitly passes '-TargetFile'
+[HKEY_CURRENT_USER\Software\Classes\*\shell\SystemTools\shell\TakeOwnership\command]
 @="wscript.exe \"D:\\Users\\joty79\\scripts\\TakeOwnership\\SilentOwnership.vbs\" \"%1\""
 
-[HKEY_CURRENT_USER\Software\Classes\Directory\shell\Z_ManageOwnership]
-@="Manage Ownership 🛡️"
+[HKEY_CURRENT_USER\Software\Classes\Directory\shell\SystemTools]
+"MUIVerb"="System Tools"
+"SubCommands"=""
+"Icon"="imageres.dll,-109"
+
+[HKEY_CURRENT_USER\Software\Classes\Directory\shell\SystemTools\shell\TakeOwnership]
+"MUIVerb"="Manage Ownership 🛡️"
 "Icon"="imageres.dll,-5324"
 "NoWorkingDirectory"=""
 
-[HKEY_CURRENT_USER\Software\Classes\Directory\shell\Z_ManageOwnership\command]
+[HKEY_CURRENT_USER\Software\Classes\Directory\shell\SystemTools\shell\TakeOwnership\command]
 @="wscript.exe \"D:\\Users\\joty79\\scripts\\TakeOwnership\\SilentOwnership.vbs\" \"%1\""
