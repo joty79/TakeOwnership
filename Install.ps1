@@ -69,6 +69,10 @@ $script:ProfileJson = @'
     "HKCU\\Software\\Classes\\Directory\\shell\\Z_ManageOwnership",
     "HKCU\\Software\\Classes\\*\\shell\\ManageOwnership",
     "HKCU\\Software\\Classes\\Directory\\shell\\ManageOwnership",
+    "HKLM\\SOFTWARE\\Classes\\*\\shell\\Z_ManageOwnership",
+    "HKLM\\SOFTWARE\\Classes\\Directory\\shell\\Z_ManageOwnership",
+    "HKLM\\SOFTWARE\\Classes\\*\\shell\\ManageOwnership",
+    "HKLM\\SOFTWARE\\Classes\\Directory\\shell\\ManageOwnership",
     "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\TakeOwnership",
     "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\TakeOwnership",
     "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\ManageOwnership",
@@ -83,24 +87,6 @@ $script:ProfileJson = @'
     "HKCR\\Directory\\shell\\SystemTools\\shell\\ManageOwnership"
   ],
   "registry_values": [
-    {
-      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools",
-      "name": "MUIVerb",
-      "type": "REG_SZ",
-      "value": "System Tools"
-    },
-    {
-      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools",
-      "name": "SubCommands",
-      "type": "REG_SZ",
-      "value": ""
-    },
-    {
-      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools",
-      "name": "Icon",
-      "type": "REG_SZ",
-      "value": "imageres.dll,-109"
-    },
     {
       "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\TakeOwnership",
       "name": "MUIVerb",
@@ -124,24 +110,6 @@ $script:ProfileJson = @'
       "name": "(default)",
       "type": "REG_SZ",
       "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%1\""
-    },
-    {
-      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools",
-      "name": "MUIVerb",
-      "type": "REG_SZ",
-      "value": "System Tools"
-    },
-    {
-      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools",
-      "name": "SubCommands",
-      "type": "REG_SZ",
-      "value": ""
-    },
-    {
-      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools",
-      "name": "Icon",
-      "type": "REG_SZ",
-      "value": "imageres.dll,-109"
     },
     {
       "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\TakeOwnership",
@@ -261,11 +229,17 @@ function RegCmd([AllowEmptyString()][string[]]$RegArgs, [switch]$IgnoreNotFound)
 }
 function RegDel([string]$Key) { RegCmd -RegArgs @('delete', $Key, '/f') -IgnoreNotFound | Out-Null }
 function RegAdd([string]$Key, [string]$Name, [string]$Type, [AllowEmptyString()][string]$Value) {
-    $safe = if ($Type -eq 'REG_DWORD') { if ([string]::IsNullOrWhiteSpace($Value)) { '0' } else { $Value } } else { if ($Value -eq '') { '""' } else { $Value } }
+    $safe = if ($Type -eq 'REG_DWORD') { if ([string]::IsNullOrWhiteSpace($Value)) { '0' } else { $Value } } else { $Value }
     $regArgs = @('add', $Key)
     if ($Name -eq '(default)') { $regArgs += '/ve' } else { $regArgs += @('/v', $Name) }
     $regArgs += @('/t', $Type, '/d', $safe, '/f')
     RegCmd -RegArgs $regArgs | Out-Null
+    if ($Type -in @('REG_SZ', 'REG_EXPAND_SZ') -and $Value -eq '') {
+        $actual = RegGet -Key $Key -Name $Name
+        if ($null -eq $actual -or $actual -ne '') {
+            throw "Empty-string registry write verification failed for $Key [$Name]"
+        }
+    }
 }
 function RegGet([string]$Key, [string]$Name) {
     $q = if ($Name -eq '(default)') { RegCmd -RegArgs @('query', $Key, '/ve') -IgnoreNotFound } else { RegCmd -RegArgs @('query', $Key, '/v', $Name) -IgnoreNotFound }

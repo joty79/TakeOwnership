@@ -18,11 +18,6 @@ Windows Registry Editor Version 5.00
 [-HKEY_CLASSES_ROOT\*\shell\SystemTools\shell\ManageOwnership]
 [-HKEY_CLASSES_ROOT\Directory\shell\SystemTools\shell\ManageOwnership]
 
-[HKEY_CURRENT_USER\Software\Classes\*\shell\SystemTools]
-"MUIVerb"="System Tools"
-"SubCommands"=""
-"Icon"="imageres.dll,-109"
-
 [HKEY_CURRENT_USER\Software\Classes\*\shell\SystemTools\shell\TakeOwnership]
 "MUIVerb"="Manage Ownership 🛡️"
 "Icon"="imageres.dll,-5324"
@@ -30,11 +25,6 @@ Windows Registry Editor Version 5.00
 
 [HKEY_CURRENT_USER\Software\Classes\*\shell\SystemTools\shell\TakeOwnership\command]
 @="wscript.exe \"D:\\Users\\joty79\\scripts\\TakeOwnership\\SilentOwnership.vbs\" \"%1\""
-
-[HKEY_CURRENT_USER\Software\Classes\Directory\shell\SystemTools]
-"MUIVerb"="System Tools"
-"SubCommands"=""
-"Icon"="imageres.dll,-109"
 
 [HKEY_CURRENT_USER\Software\Classes\Directory\shell\SystemTools\shell\TakeOwnership]
 "MUIVerb"="Manage Ownership 🛡️"
