@@ -59,3 +59,19 @@
 - Files affected: `Install.ps1`, `PROJECT_RULES.md`.
 - Validation/tests run: Regenerated `Install.ps1` from `InstallerCore`; parser validation on generated installer; targeted scan confirmed the old literal `""` pattern is absent.
 
+### Entry - 2026-03-03 (Manual .reg and InstallerCore profile are in parity)
+- Date: 2026-03-03
+- Problem: After `WhoIsUsingThis` drifted, `TakeOwnership` needed an explicit parity check between the manual `.reg` and the `InstallerCore` profile before trusting the regenerated installer.
+- Root cause: Generated installers are only as accurate as their source profile; parity cannot be assumed after repo-local manual fixes in sibling tools.
+- Guardrail/rule: For `TakeOwnership`, the source-of-truth profile already matches the manual `.reg` on current supported branches (`*` and `Directory`) and values (`MUIVerb`, `Icon`, `NoWorkingDirectory`, command). No extra profile fix is needed before regeneration.
+- Files affected: `Manage_Ownership.reg`, `Install.ps1`, `PROJECT_RULES.md`.
+- Validation/tests run: Static diff review of `Manage_Ownership.reg` vs `InstallerCore\\profiles\\TakeOwnership.json`.
+
+### Entry - 2026-03-03 (Add background support under shared System Tools submenu)
+- Date: 2026-03-03
+- Problem: `TakeOwnership` did not appear on folder background or desktop background under the shared `System Tools` submenu.
+- Root cause: Both the manual `.reg` and the `InstallerCore` profile only registered child verbs under `*` and `Directory`; no child keys existed for `Directory\\Background\\shell` or `DesktopBackground\\Shell`.
+- Guardrail/rule: Keep `TakeOwnership` child-only, but mirror the verb on supported background branches too: `HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership` and `HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership`, using `%V` and preserving `NoWorkingDirectory`.
+- Files affected: `Manage_Ownership.reg`, `Install.ps1`, `PROJECT_RULES.md`.
+- Validation/tests run: Static parity review against `InstallerCore\\profiles\\TakeOwnership.json`; regenerated installer parser validation.
+

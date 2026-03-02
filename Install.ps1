@@ -75,16 +75,24 @@ $script:ProfileJson = @'
     "HKLM\\SOFTWARE\\Classes\\Directory\\shell\\ManageOwnership",
     "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\TakeOwnership",
     "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\TakeOwnership",
+    "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership",
+    "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership",
     "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\ManageOwnership",
     "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\ManageOwnership",
+    "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\ManageOwnership",
+    "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\ManageOwnership",
     "HKCR\\*\\shell\\Z_ManageOwnership",
     "HKCR\\Directory\\shell\\Z_ManageOwnership",
     "HKCR\\*\\shell\\ManageOwnership",
     "HKCR\\Directory\\shell\\ManageOwnership",
     "HKCR\\*\\shell\\SystemTools\\shell\\TakeOwnership",
     "HKCR\\Directory\\shell\\SystemTools\\shell\\TakeOwnership",
+    "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership",
+    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership",
     "HKCR\\*\\shell\\SystemTools\\shell\\ManageOwnership",
-    "HKCR\\Directory\\shell\\SystemTools\\shell\\ManageOwnership"
+    "HKCR\\Directory\\shell\\SystemTools\\shell\\ManageOwnership",
+    "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\ManageOwnership",
+    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\ManageOwnership"
   ],
   "registry_values": [
     {
@@ -134,6 +142,54 @@ $script:ProfileJson = @'
       "name": "(default)",
       "type": "REG_SZ",
       "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%1\""
+    },
+    {
+      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership",
+      "name": "MUIVerb",
+      "type": "REG_SZ",
+      "value": "Manage Ownership 🛡️"
+    },
+    {
+      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership",
+      "name": "Icon",
+      "type": "REG_SZ",
+      "value": "imageres.dll,-5324"
+    },
+    {
+      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership",
+      "name": "NoWorkingDirectory",
+      "type": "REG_SZ",
+      "value": ""
+    },
+    {
+      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership\\command",
+      "name": "(default)",
+      "type": "REG_SZ",
+      "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
+    },
+    {
+      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership",
+      "name": "MUIVerb",
+      "type": "REG_SZ",
+      "value": "Manage Ownership 🛡️"
+    },
+    {
+      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership",
+      "name": "Icon",
+      "type": "REG_SZ",
+      "value": "imageres.dll,-5324"
+    },
+    {
+      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership",
+      "name": "NoWorkingDirectory",
+      "type": "REG_SZ",
+      "value": ""
+    },
+    {
+      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership\\command",
+      "name": "(default)",
+      "type": "REG_SZ",
+      "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
     }
   ],
   "registry_verify": [
@@ -146,6 +202,16 @@ $script:ProfileJson = @'
       "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "expected": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%1\""
+    },
+    {
+      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership\\command",
+      "name": "(default)",
+      "expected": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
+    },
+    {
+      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership\\command",
+      "name": "(default)",
+      "expected": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
     }
   ],
   "wrapper_patches": []
@@ -765,11 +831,49 @@ function ReadRefInteractive([string]$DefaultRef) {
     }
 }
 
+function ReadPackageSourceInteractive([ValidateSet('Install', 'Update')] [string]$Mode, [ValidateSet('Local', 'GitHub')] [string]$DefaultSource = 'GitHub') {
+    $defaultLabel = if ($DefaultSource -eq 'GitHub') { 'GitHub' } else { 'Local' }
+    Write-Host ''
+    Write-Host ("Package source for {0}:" -f $Mode) -ForegroundColor Cyan
+    Write-Host ("[1] GitHub{0}" -f $(if ($DefaultSource -eq 'GitHub') { ' (default)' } else { '' })) -ForegroundColor Gray
+    Write-Host ("[2] Local{0}" -f $(if ($DefaultSource -eq 'Local') { ' (default)' } else { '' })) -ForegroundColor Gray
+
+    while ($true) {
+        $choice = (Read-Host ("Select package source (blank = {0})" -f $defaultLabel)).Trim()
+        if ([string]::IsNullOrWhiteSpace($choice)) { return $DefaultSource }
+        switch ($choice) {
+            '1' { return 'GitHub' }
+            '2' { return 'Local' }
+            default { Write-Host 'Invalid selection. Choose 1, 2, or Enter.' -ForegroundColor Yellow }
+        }
+    }
+}
+
+function PreparePackageSource([ValidateSet('Install', 'Update')] [string]$Mode) {
+    if (-not $script:HasCliArgs) {
+        $defaultSource = if ($PackageSource -eq 'Local') { 'GitHub' } else { $PackageSource }
+        $PackageSource = ReadPackageSourceInteractive -Mode $Mode -DefaultSource $defaultSource
+        Set-Variable -Name PackageSource -Scope Script -Value $PackageSource
+    }
+
+    if ($PackageSource -eq 'GitHub') {
+        EnsureGitHubRefResolved
+        if (-not $script:HasCliArgs) {
+            $GitHubRef = ReadRefInteractive -DefaultRef $GitHubRef
+            Set-Variable -Name GitHubRef -Scope Script -Value $GitHubRef
+        }
+        Write-Host ("Using GitHub ref: {0}" -f $GitHubRef) -ForegroundColor DarkCyan
+        return
+    }
+
+    Write-Host ("Using local source: {0}" -f $SourcePath) -ForegroundColor DarkCyan
+}
+
 if (-not $script:HasCliArgs) { $menuAction = ShowMenu; if ($menuAction -eq 'Exit') { exit 0 }; $Action = $menuAction }
 switch ($Action) {
-    'Install' { $PackageSource = 'GitHub'; EnsureGitHubRefResolved; if (-not $script:HasCliArgs) { $GitHubRef = ReadRefInteractive -DefaultRef $GitHubRef }; Write-Host ("Using GitHub ref: {0}" -f $GitHubRef) -ForegroundColor DarkCyan; if (-not (Confirm "Install $($script:DisplayName) to '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunInstallOrUpdate -Mode 'Install') }
+    'Install' { PreparePackageSource -Mode 'Install'; if (-not (Confirm "Install $($script:DisplayName) to '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunInstallOrUpdate -Mode 'Install') }
     'InstallGitHub' { $PackageSource = 'GitHub'; EnsureGitHubRefResolved; Write-Host ("Using GitHub ref: {0}" -f $GitHubRef) -ForegroundColor DarkCyan; if (-not (Confirm "Install $($script:DisplayName) to '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunInstallOrUpdate -Mode 'Install') }
-    'Update' { $PackageSource = 'GitHub'; EnsureGitHubRefResolved; if (-not $script:HasCliArgs) { $GitHubRef = ReadRefInteractive -DefaultRef $GitHubRef }; Write-Host ("Using GitHub ref: {0}" -f $GitHubRef) -ForegroundColor DarkCyan; if (-not (Confirm "Update existing $($script:DisplayName) at '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunInstallOrUpdate -Mode 'Update') }
+    'Update' { PreparePackageSource -Mode 'Update'; if (-not (Confirm "Update existing $($script:DisplayName) at '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunInstallOrUpdate -Mode 'Update') }
     'UpdateGitHub' { $PackageSource = 'GitHub'; EnsureGitHubRefResolved; Write-Host ("Using GitHub ref: {0}" -f $GitHubRef) -ForegroundColor DarkCyan; if (-not (Confirm "Update existing $($script:DisplayName) at '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunInstallOrUpdate -Mode 'Update') }
     'Uninstall' { if (-not (Confirm "Uninstall $($script:DisplayName) from '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunUninstall) }
     'OpenInstallDirectory' { if (-not (Test-Path -LiteralPath $InstallPath)) { Write-Host ("Install directory not found: {0}" -f $InstallPath) -ForegroundColor Yellow; exit 1 }; Start-Process explorer.exe -ArgumentList $InstallPath; exit 0 }
