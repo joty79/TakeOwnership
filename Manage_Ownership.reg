@@ -7,16 +7,24 @@ Windows Registry Editor Version 5.00
 [-HKEY_CURRENT_USER\Software\Classes\Directory\shell\ManageOwnership]
 [-HKEY_CURRENT_USER\Software\Classes\*\shell\SystemTools\shell\TakeOwnership]
 [-HKEY_CURRENT_USER\Software\Classes\Directory\shell\SystemTools\shell\TakeOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\SystemTools\shell\TakeOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\DesktopBackground\Shell\SystemTools\shell\TakeOwnership]
 [-HKEY_CURRENT_USER\Software\Classes\*\shell\SystemTools\shell\ManageOwnership]
 [-HKEY_CURRENT_USER\Software\Classes\Directory\shell\SystemTools\shell\ManageOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\SystemTools\shell\ManageOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\DesktopBackground\Shell\SystemTools\shell\ManageOwnership]
 [-HKEY_CLASSES_ROOT\*\shell\Z_ManageOwnership]
 [-HKEY_CLASSES_ROOT\Directory\shell\Z_ManageOwnership]
 [-HKEY_CLASSES_ROOT\*\shell\ManageOwnership]
 [-HKEY_CLASSES_ROOT\Directory\shell\ManageOwnership]
 [-HKEY_CLASSES_ROOT\*\shell\SystemTools\shell\TakeOwnership]
 [-HKEY_CLASSES_ROOT\Directory\shell\SystemTools\shell\TakeOwnership]
+[-HKEY_CLASSES_ROOT\Directory\Background\shell\SystemTools\shell\TakeOwnership]
+[-HKEY_CLASSES_ROOT\DesktopBackground\Shell\SystemTools\shell\TakeOwnership]
 [-HKEY_CLASSES_ROOT\*\shell\SystemTools\shell\ManageOwnership]
 [-HKEY_CLASSES_ROOT\Directory\shell\SystemTools\shell\ManageOwnership]
+[-HKEY_CLASSES_ROOT\Directory\Background\shell\SystemTools\shell\ManageOwnership]
+[-HKEY_CLASSES_ROOT\DesktopBackground\Shell\SystemTools\shell\ManageOwnership]
 
 [HKEY_CURRENT_USER\Software\Classes\*\shell\SystemTools\shell\TakeOwnership]
 "MUIVerb"="Manage Ownership 🛡️"
@@ -33,3 +41,19 @@ Windows Registry Editor Version 5.00
 
 [HKEY_CURRENT_USER\Software\Classes\Directory\shell\SystemTools\shell\TakeOwnership\command]
 @="wscript.exe \"D:\\Users\\joty79\\scripts\\TakeOwnership\\SilentOwnership.vbs\" \"%1\""
+
+[HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\SystemTools\shell\TakeOwnership]
+"MUIVerb"="Manage Ownership 🛡️"
+"Icon"="imageres.dll,-5324"
+"NoWorkingDirectory"=""
+
+[HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\SystemTools\shell\TakeOwnership\command]
+@="wscript.exe \"D:\\Users\\joty79\\scripts\\TakeOwnership\\SilentOwnership.vbs\" \"%V\""
+
+[HKEY_CURRENT_USER\Software\Classes\DesktopBackground\Shell\SystemTools\shell\TakeOwnership]
+"MUIVerb"="Manage Ownership 🛡️"
+"Icon"="imageres.dll,-5324"
+"NoWorkingDirectory"=""
+
+[HKEY_CURRENT_USER\Software\Classes\DesktopBackground\Shell\SystemTools\shell\TakeOwnership\command]
+@="wscript.exe \"D:\\Users\\joty79\\scripts\\TakeOwnership\\SilentOwnership.vbs\" \"%V\""
