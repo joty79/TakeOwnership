@@ -1,0 +1,19 @@
+Windows Registry Editor Version 5.00
+
+; Cleanup legacy/current verb keys (safe: delete only if key exists)
+[-HKEY_CURRENT_USER\Software\Classes\*\shell\Z_ManageOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\Directory\shell\Z_ManageOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\*\shell\ManageOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\Directory\shell\ManageOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\*\shell\SystemTools\shell\TakeOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\Directory\shell\SystemTools\shell\TakeOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\*\shell\SystemTools\shell\ManageOwnership]
+[-HKEY_CURRENT_USER\Software\Classes\Directory\shell\SystemTools\shell\ManageOwnership]
+[-HKEY_CLASSES_ROOT\*\shell\Z_ManageOwnership]
+[-HKEY_CLASSES_ROOT\Directory\shell\Z_ManageOwnership]
+[-HKEY_CLASSES_ROOT\*\shell\ManageOwnership]
+[-HKEY_CLASSES_ROOT\Directory\shell\ManageOwnership]
+[-HKEY_CLASSES_ROOT\*\shell\SystemTools\shell\TakeOwnership]
+[-HKEY_CLASSES_ROOT\Directory\shell\SystemTools\shell\TakeOwnership]
+[-HKEY_CLASSES_ROOT\*\shell\SystemTools\shell\ManageOwnership]
+[-HKEY_CLASSES_ROOT\Directory\shell\SystemTools\shell\ManageOwnership]

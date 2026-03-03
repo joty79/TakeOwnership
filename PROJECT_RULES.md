@@ -59,3 +59,11 @@
 - Files affected: `Install.ps1`, `PROJECT_RULES.md`.
 - Validation/tests run: Regenerated `Install.ps1` from `InstallerCore`; parser validation on generated installer; targeted scan confirmed the old literal `""` pattern is absent.
 
+### Entry - 2026-03-03 (Adopt Download Latest template action)
+- Date: 2026-03-03
+- Problem: Local repo workflows needed the new template `DownloadLatest` action and its final menu ordering without manual installer edits.
+- Root cause: Existing generated installer snapshot predated the template addition and reorder of `DownloadLatest`.
+- Guardrail/rule: Keep `Install.ps1` regenerated from current `InstallerCore` when template action flow changes; `DownloadLatest` should remain grouped directly below `Uninstall`.
+- Files affected: `Install.ps1`, `PROJECT_RULES.md`.
+- Validation/tests run: Regenerated `Install.ps1` from current `InstallerCore`; parser validation via `Parser::ParseFile`.
+

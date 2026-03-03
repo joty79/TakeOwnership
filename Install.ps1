@@ -1,7 +1,7 @@
 #requires -version 7.0
 [CmdletBinding()]
 param(
-    [ValidateSet('Install', 'Update', 'Uninstall', 'InstallGitHub', 'UpdateGitHub', 'OpenInstallDirectory', 'OpenInstallLogs')]
+    [ValidateSet('Install', 'Update', 'Uninstall', 'InstallGitHub', 'UpdateGitHub', 'OpenInstallDirectory', 'OpenInstallLogs', 'DownloadLatest')]
     [string]$Action = 'Install',
     [string]$InstallPath = '',
     [string]$SourcePath = $PSScriptRoot,
@@ -497,6 +497,18 @@ function Deploy([string]$SourceRoot, [string]$InstallRoot) {
     }
 }
 
+function CleanupTempPackageRoots {
+    foreach ($tempRoot in $script:TempPackageRoots) {
+        try {
+            if (Test-Path -LiteralPath $tempRoot) {
+                Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
+        catch {}
+    }
+    $script:TempPackageRoots.Clear()
+}
+
 function PatchWrappers([string]$InstallRoot) {
     foreach ($p in @((Get-P 'wrapper_patches' @()))) {
         $fileRel = [string]$p.file; $regex = [string]$p.regex; $repRaw = [string]$p.replacement
@@ -625,7 +637,7 @@ function RunInstallOrUpdate([ValidateSet('Install', 'Update')] [string]$Mode) {
     Log "Starting $Mode to $InstallPath"
     foreach ($cmd in @('pwsh.exe', 'wscript.exe') + (Arr 'required_commands')) { if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) { Log "Missing required command: $cmd" 'ERROR'; return 1 } }
     EnsureDir $InstallPath; EnsureDir (Join-Path $InstallPath 'logs'); EnsureDir (Join-Path $InstallPath 'state'); EnsureDir (Join-Path $InstallPath 'assets')
-    try { $src = ResolveSourceRoot; Deploy -SourceRoot $src -InstallRoot $InstallPath } finally { foreach ($t in $script:TempPackageRoots) { try { if (Test-Path -LiteralPath $t) { Remove-Item -LiteralPath $t -Recurse -Force -ErrorAction SilentlyContinue } } catch {} } $script:TempPackageRoots.Clear() }
+    try { $src = ResolveSourceRoot; Deploy -SourceRoot $src -InstallRoot $InstallPath } finally { CleanupTempPackageRoots }
     PatchWrappers -InstallRoot $InstallPath
     $coreOk = VerifyCore -InstallRoot $InstallPath
     WriteRegistry -InstallRoot $InstallPath
@@ -654,6 +666,57 @@ function RunUninstall {
     return 0
 }
 
+function Start-RelaunchUpdatedInstaller([string]$TargetRoot) {
+    $updatedInstaller = Join-Path $TargetRoot 'Install.ps1'
+    if (-not (Test-Path -LiteralPath $updatedInstaller)) {
+        throw "Updated installer was not found after download: $updatedInstaller"
+    }
+
+    $pwshCmd = Get-Command pwsh.exe -ErrorAction SilentlyContinue
+    $pwshExe = if ($null -ne $pwshCmd) { $pwshCmd.Source } else { Join-Path $PSHOME 'pwsh.exe' }
+    $launcherPath = Join-Path $env:TEMP ("{0}_relaunch_{1}.cmd" -f $script:ToolName, [guid]::NewGuid().ToString('N'))
+    $launcherContent = @(
+        '@echo off',
+        'setlocal',
+        'timeout /t 2 /nobreak >nul',
+        ('start "" "{0}" -ExecutionPolicy Bypass -File "{1}"' -f $pwshExe, $updatedInstaller),
+        'del "%~f0"'
+    )
+    Set-Content -LiteralPath $launcherPath -Value $launcherContent -Encoding ASCII
+    Start-Process -FilePath $launcherPath -WindowStyle Hidden | Out-Null
+}
+
+function RunDownloadLatest {
+    $targetRoot = Norm $PSScriptRoot
+    Log "Starting DownloadLatest to $targetRoot"
+
+    if (-not (Get-Command pwsh.exe -ErrorAction SilentlyContinue)) {
+        Log 'Missing required command: pwsh.exe' 'ERROR'
+        return 1
+    }
+
+    try {
+        $src = ResolveSourceRoot
+        if ($script:ResolvedPackageSource -ne 'GitHub') {
+            throw 'GitHub download failed. DownloadLatest does not allow local fallback.'
+        }
+
+        Deploy -SourceRoot $src -InstallRoot $targetRoot
+        $coreOk = VerifyCore -InstallRoot $targetRoot
+        if (-not $coreOk) {
+            Write-Host 'Download Latest completed with warnings.' -ForegroundColor Yellow
+            return 2
+        }
+
+        Start-RelaunchUpdatedInstaller -TargetRoot $targetRoot
+        Write-Host 'Latest files downloaded successfully. Relaunching updated installer...' -ForegroundColor Green
+        return 0
+    }
+    finally {
+        CleanupTempPackageRoots
+    }
+}
+
 function ShowMenu {
     while ($true) {
         try { Clear-Host } catch {}
@@ -666,11 +729,12 @@ function ShowMenu {
         Write-Host '[1] Install' -ForegroundColor Green
         Write-Host '[2] Update' -ForegroundColor Yellow
         Write-Host '[3] Uninstall' -ForegroundColor Red
-        Write-Host '[4] Open install directory' -ForegroundColor Cyan
-        Write-Host ('[5] {0}' -f ([string](Get-P 'menu_option_5_label' 'Open install logs'))) -ForegroundColor Cyan
+        Write-Host '[4] Download Latest here' -ForegroundColor Green
+        Write-Host '[5] Open install directory' -ForegroundColor Cyan
+        Write-Host ('[6] {0}' -f ([string](Get-P 'menu_option_5_label' 'Open install logs'))) -ForegroundColor Cyan
         Write-Host '[0] Exit' -ForegroundColor Gray
         $c = (Read-Host 'Select option').Trim()
-        switch ($c) { '1' { return 'Install' }; '2' { return 'Update' }; '3' { return 'Uninstall' }; '4' { return 'OpenInstallDirectory' }; '5' { return 'OpenInstallLogs' }; '0' { return 'Exit' } }
+        switch ($c) { '1' { return 'Install' }; '2' { return 'Update' }; '3' { return 'Uninstall' }; '4' { return 'DownloadLatest' }; '5' { return 'OpenInstallDirectory' }; '6' { return 'OpenInstallLogs' }; '0' { return 'Exit' } }
     }
 }
 
@@ -774,6 +838,7 @@ switch ($Action) {
     'Uninstall' { if (-not (Confirm "Uninstall $($script:DisplayName) from '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunUninstall) }
     'OpenInstallDirectory' { if (-not (Test-Path -LiteralPath $InstallPath)) { Write-Host ("Install directory not found: {0}" -f $InstallPath) -ForegroundColor Yellow; exit 1 }; Start-Process explorer.exe -ArgumentList $InstallPath; exit 0 }
     'OpenInstallLogs' { $logFile = Join-Path $InstallPath 'logs\\installer.log'; $logDir = Split-Path -Path $logFile -Parent; EnsureDir $logDir; if (Test-Path -LiteralPath $logFile) { Start-Process notepad.exe -ArgumentList $logFile } else { Start-Process explorer.exe -ArgumentList $logDir }; exit 0 }
+    'DownloadLatest' { $PackageSource = 'GitHub'; EnsureGitHubRefResolved; if (-not $script:HasCliArgs) { $GitHubRef = ReadRefInteractive -DefaultRef $GitHubRef }; Write-Host ("Using GitHub ref: {0}" -f $GitHubRef) -ForegroundColor DarkCyan; if (-not (Confirm "Download latest $($script:DisplayName) into '$PSScriptRoot' and relaunch the updated installer?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunDownloadLatest) }
     default { Write-Host "Unknown action: $Action" -ForegroundColor Red; exit 1 }
 }
 
