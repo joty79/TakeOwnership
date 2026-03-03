@@ -75,3 +75,11 @@
 - Files affected: `Manage_Ownership.reg`, `Install.ps1`, `PROJECT_RULES.md`.
 - Validation/tests run: Static parity review against `InstallerCore\\profiles\\TakeOwnership.json`; regenerated installer parser validation.
 
+
+### Entry - 2026-03-03 (Output suppression performance fix in Take-Ownership)
+- Date: 2026-03-03
+- Problem: `Take-Ownership` function was slow on large directories because `takeown /r` and `icacls /t` output was captured into PowerShell variables, which buffers all output lines as PSObjects in memory.
+- Root cause: Variable capture (` = takeown.exe ... 2>&1`) forces full pipeline object creation for every output line (thousands for recursive operations). This is functionally equivalent to the `| Out-Null` anti-pattern.
+- Guardrail/rule: For native command output suppression in hot paths, always use `> $null 2>&1` stream redirection instead of variable capture or `| Out-Null`. Check success via `` without collecting output.
+- Files affected: `Manage_Ownership.ps1`, `PROJECT_RULES.md`.
+- Validation/tests run: Static review of output suppression patterns; verified `` checks remain functional.

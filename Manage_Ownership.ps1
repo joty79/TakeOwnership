@@ -84,18 +84,18 @@ function Take-Ownership {
     
     Write-Host "🔸 Seizing Ownership..." -ForegroundColor Gray
     if ($IsDirectory) {
-        $Res = takeown.exe /f $TargetFile /a /r /d Y 2>&1
+        & takeown.exe /f $TargetFile /a /r /d Y > $null 2>&1
     } else {
-        $Res = takeown.exe /f $TargetFile /a 2>&1
+        & takeown.exe /f $TargetFile /a > $null 2>&1
     }
 
-    if ($LASTEXITCODE -ne 0) { Write-Host "⚠️ TakeOwn Error: $Res" -ForegroundColor Red }
+    if ($LASTEXITCODE -ne 0) { Write-Host "⚠️ TakeOwn failed (exit code: $LASTEXITCODE)" -ForegroundColor Red }
     else { Write-Host "✅ Ownership Seized." -ForegroundColor Green }
     
     Write-Host "🔸 Granting Administrators Access..." -ForegroundColor Gray
-    $Icacls = icacls.exe $TargetFile /grant "Administrators:F" /t /c /q 2>&1
+    & icacls.exe $TargetFile /grant "Administrators:F" /t /c /q > $null 2>&1
     
-    if ($LASTEXITCODE -ne 0) { Write-Host "⚠️ Icacls Error: $Icacls" -ForegroundColor Red }
+    if ($LASTEXITCODE -ne 0) { Write-Host "⚠️ Icacls failed (exit code: $LASTEXITCODE)" -ForegroundColor Red }
     else { Write-Host "✅ Permissions Granted." -ForegroundColor Green }
 }
 
