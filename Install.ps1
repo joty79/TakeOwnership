@@ -11,7 +11,8 @@ param(
     [string]$GitHubRef = '',
     [string]$GitHubZipUrl = '',
     [switch]$Force,
-    [switch]$NoExplorerRestart
+    [switch]$NoExplorerRestart,
+    [switch]$NoSelfRelaunch
 )
 
 Set-StrictMode -Version Latest
@@ -24,6 +25,7 @@ $script:ProfileJson = @'
   "install_folder_name": "TakeOwnershipContext",
   "github_repo": "joty79/TakeOwnership",
   "github_ref": "",
+  "app_metadata_file": "app-metadata.json",
   "legacy_root": "D:\\Users\\joty79\\scripts\\TakeOwnership",
   "publisher": "joty79",
   "uninstall_key_name": "TakeOwnershipContext",
@@ -37,6 +39,7 @@ $script:ProfileJson = @'
   ],
   "required_package_entries": [
     "Install.ps1",
+    "app-metadata.json",
     "Manage_Ownership.ps1",
     "SilentOwnership.vbs",
     "Manage_Ownership.reg",
@@ -44,6 +47,7 @@ $script:ProfileJson = @'
   ],
   "deploy_entries": [
     "Install.ps1",
+    "app-metadata.json",
     "Manage_Ownership.ps1",
     "SilentOwnership.vbs",
     "Manage_Ownership.reg",
@@ -52,6 +56,7 @@ $script:ProfileJson = @'
   "preserve_existing_entries": [],
   "verify_core_files": [
     "Install.ps1",
+    "app-metadata.json",
     "Manage_Ownership.ps1",
     "SilentOwnership.vbs",
     "assets\\RunAsTI\\RunAsTI.ps1"
@@ -240,9 +245,31 @@ function NormalizeGitHubRef([string]$Ref) {
     }
     return $candidate
 }
+function Resolve-AppVersionFromRoot([string]$PackageRoot, [AllowEmptyString()][string]$MetadataFile, [AllowEmptyString()][string]$FallbackVersion = '1.0.0') {
+    if ([string]::IsNullOrWhiteSpace($MetadataFile) -or [string]::IsNullOrWhiteSpace($PackageRoot)) {
+        return $FallbackVersion
+    }
+
+    $metadataPath = Join-Path $PackageRoot $MetadataFile
+    if (-not (Test-Path -LiteralPath $metadataPath -PathType Leaf)) {
+        return $FallbackVersion
+    }
+
+    try {
+        $metadata = Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json
+        $versionProperty = $metadata.PSObject.Properties['version']
+        if ($null -ne $versionProperty -and -not [string]::IsNullOrWhiteSpace([string]$versionProperty.Value)) {
+            return [string]$versionProperty.Value
+        }
+    }
+    catch {}
+
+    return $FallbackVersion
+}
 
 $script:ToolName = [string](Get-P 'tool_name' 'Tool')
-$script:InstallerVersion = '1.0.0'
+$script:AppMetadataFile = [string](Get-P 'app_metadata_file' 'app-metadata.json')
+$script:InstallerVersion = [string](Get-P 'app_version' '1.0.0')
 $script:DisplayName = [string](Get-P 'uninstall_display_name' "$($script:ToolName) Context Menu")
 $script:InstallerTitle = [string](Get-P 'installer_title' "$($script:ToolName) Installer")
 $script:LegacyRoot = [string](Get-P 'legacy_root' '')
@@ -251,8 +278,11 @@ $script:UninstallKeyPath = "Registry::HKEY_CURRENT_USER\Software\Microsoft\Windo
 $script:Warnings = [System.Collections.Generic.List[string]]::new()
 $script:ResolvedPackageSource = $PackageSource
 $script:ResolvedGitHubCommit = ''
+$script:ResolvedSourceGitBranch = ''
+$script:ResolvedSourceDirty = $false
 $script:TempPackageRoots = [System.Collections.Generic.List[string]]::new()
 $script:HasCliArgs = $MyInvocation.BoundParameters.Count -gt 0
+$script:IsWindowsTerminalSession = -not [string]::IsNullOrWhiteSpace($env:WT_SESSION)
 
 if ([string]::IsNullOrWhiteSpace($InstallPath)) { $InstallPath = Join-Path $env:LOCALAPPDATA ([string](Get-P 'install_folder_name' "$($script:ToolName)Context")) }
 if ([string]::IsNullOrWhiteSpace($GitHubRepo)) { $GitHubRepo = [string](Get-P 'github_repo' '') }
@@ -260,6 +290,7 @@ $GitHubRef = NormalizeGitHubRef $GitHubRef
 if (-not $script:GitHubRefSpecified) { $GitHubRef = NormalizeGitHubRef ([string](Get-P 'github_ref' '')) }
 $InstallPath = Norm $InstallPath
 $SourcePath = Norm $SourcePath
+$script:InstallerVersion = Resolve-AppVersionFromRoot -PackageRoot $SourcePath -MetadataFile $script:AppMetadataFile -FallbackVersion $script:InstallerVersion
 $script:InstallerLogPath = Join-Path $InstallPath 'logs\installer.log'
 
 function Log([string]$Message, [ValidateSet('INFO', 'WARN', 'ERROR')] [string]$Level = 'INFO') {
@@ -283,7 +314,9 @@ function DeployEntries {
 
 function Confirm([string]$Prompt) {
     if ($Force) { return $true }
-    return ((Read-Host "$Prompt [y/N]").Trim().ToLowerInvariant() -eq 'y')
+    $response = Read-Host "$Prompt [y/N]"
+    if ($null -eq $response) { return $false }
+    return ($response.Trim().ToLowerInvariant() -eq 'y')
 }
 
 function RegCmd([AllowEmptyString()][string[]]$RegArgs, [switch]$IgnoreNotFound) {
@@ -375,6 +408,54 @@ function Get-GitHubApiHeaders {
     }
     return $headers
 }
+function ResolveGitHubCommit([string]$Repo, [string]$Ref) {
+    if ([string]::IsNullOrWhiteSpace($Repo) -or [string]::IsNullOrWhiteSpace($Ref)) { return '' }
+
+    if (Get-Command gh.exe -ErrorAction SilentlyContinue) {
+        try {
+            $sha = (& gh.exe api "repos/$Repo/commits/$Ref" --jq '.sha' 2>$null | Out-String).Trim()
+            if (-not [string]::IsNullOrWhiteSpace($sha)) { return $sha }
+        }
+        catch {}
+    }
+
+    try {
+        $headers = Get-GitHubApiHeaders
+        $commitInfo = Invoke-RestMethod -Uri ("https://api.github.com/repos/{0}/commits/{1}" -f $Repo, $Ref) -Method Get -Headers $headers -TimeoutSec 8
+        if ($null -ne $commitInfo -and -not [string]::IsNullOrWhiteSpace([string]$commitInfo.sha)) {
+            return [string]$commitInfo.sha
+        }
+    }
+    catch {}
+
+    return ''
+}
+function Set-LocalSourceGitMetadata([string]$Root) {
+    $script:ResolvedGitHubCommit = ''
+    $script:ResolvedSourceGitBranch = ''
+    $script:ResolvedSourceDirty = $false
+
+    if ([string]::IsNullOrWhiteSpace($Root) -or -not (Get-Command git.exe -ErrorAction SilentlyContinue)) { return }
+
+    try {
+        $inside = (& git.exe -C $Root rev-parse --is-inside-work-tree 2>$null | Out-String).Trim()
+        if ($inside -ne 'true') { return }
+
+        $commit = (& git.exe -C $Root rev-parse HEAD 2>$null | Out-String).Trim()
+        if (-not [string]::IsNullOrWhiteSpace($commit)) {
+            $script:ResolvedGitHubCommit = $commit
+        }
+
+        $branch = (& git.exe -C $Root branch --show-current 2>$null | Out-String).Trim()
+        if (-not [string]::IsNullOrWhiteSpace($branch)) {
+            $script:ResolvedSourceGitBranch = $branch
+        }
+
+        $dirty = (& git.exe -C $Root status --porcelain 2>$null | Out-String).Trim()
+        $script:ResolvedSourceDirty = (-not [string]::IsNullOrWhiteSpace($dirty))
+    }
+    catch {}
+}
 function Get-GitHubRemoteInfo([string]$Repo) {
     $result = [ordered]@{
         DefaultBranch = ''
@@ -463,12 +544,17 @@ function ResolveGitHubRefAuto {
 function EnsureGitHubRefResolved {
     $resolved = ResolveGitHubRefAuto
     $script:GitHubRefSpecified = $true
-    $script:ResolvedGitHubCommit = ''
     Set-Variable -Name GitHubRef -Scope Script -Value $resolved
+    $script:ResolvedGitHubCommit = ResolveGitHubCommit -Repo $GitHubRepo -Ref $resolved
+    $script:ResolvedSourceGitBranch = $resolved
+    $script:ResolvedSourceDirty = $false
 }
 function ResolveSourceRoot {
     $script:ResolvedPackageSource = $PackageSource
-    if ($PackageSource -eq 'Local' -and (TestPkgRoot $SourcePath)) { return $SourcePath }
+    if ($PackageSource -eq 'Local' -and (TestPkgRoot $SourcePath)) {
+        Set-LocalSourceGitMetadata -Root $SourcePath
+        return $SourcePath
+    }
     if ([string]::IsNullOrWhiteSpace($GitHubRepo)) { throw 'GitHubRepo is required for GitHub package source.' }
     if ([string]::IsNullOrWhiteSpace($GitHubRef)) { EnsureGitHubRefResolved }
     if ([string]::IsNullOrWhiteSpace($GitHubRef)) { throw 'GitHubRef could not be resolved for GitHub package source.' }
@@ -516,6 +602,7 @@ function ResolveSourceRoot {
             if ($fallbackRoots.Count -gt 0) {
                 Log "GitHub fetch failed. Falling back to local package source: $($fallbackRoots[0])" 'WARN'
                 $script:ResolvedPackageSource = 'Local'
+                Set-LocalSourceGitMetadata -Root $fallbackRoots[0]
                 return $fallbackRoots[0]
             }
             throw
@@ -528,6 +615,7 @@ function ResolveSourceRoot {
         if ($fallbackRoots.Count -gt 0) {
             Log "GitHub extract failed. Falling back to local package source: $($fallbackRoots[0])" 'WARN'
             $script:ResolvedPackageSource = 'Local'
+            Set-LocalSourceGitMetadata -Root $fallbackRoots[0]
             return $fallbackRoots[0]
         }
         throw
@@ -537,6 +625,7 @@ function ResolveSourceRoot {
     if ($fallbackRoots.Count -gt 0) {
         Log "Downloaded package missing required files. Falling back to local package source: $($fallbackRoots[0])" 'WARN'
         $script:ResolvedPackageSource = 'Local'
+        Set-LocalSourceGitMetadata -Root $fallbackRoots[0]
         return $fallbackRoots[0]
     }
     throw 'Downloaded package does not contain required files.'
@@ -549,16 +638,18 @@ function Deploy([string]$SourceRoot, [string]$InstallRoot) {
         $dst = Join-Path $InstallRoot $rel
         if (-not (Test-Path -LiteralPath $src)) { throw "Missing deploy entry: $rel" }
         $preserve = $keep.ContainsKey($rel.ToLowerInvariant())
+        if ((Norm $src) -ieq (Norm $dst)) { continue }
         $srcItem = Get-Item -LiteralPath $src
         if ($srcItem.PSIsContainer) {
             if ($preserve -and (Test-Path -LiteralPath $dst)) { continue }
-            EnsureDir (Split-Path -Path $dst -Parent)
-            Copy-Item -LiteralPath $src -Destination $dst -Recurse -Force
+            EnsureDir $dst
+            foreach ($child in @(Get-ChildItem -LiteralPath $src -Force)) {
+                Copy-Item -LiteralPath $child.FullName -Destination $dst -Recurse -Force
+            }
             continue
         }
         EnsureDir (Split-Path -Path $dst -Parent)
         if ($preserve -and (Test-Path -LiteralPath $dst)) { continue }
-        if ((Norm $src) -ieq (Norm $dst)) { continue }
         Copy-Item -LiteralPath $src -Destination $dst -Force
     }
 }
@@ -590,6 +681,7 @@ function SaveMeta([string]$InstallRoot, [string]$Mode) {
     $meta = [ordered]@{
         schema_version = 1
         installer_version = $script:InstallerVersion
+        app_version = $script:InstallerVersion
         tool_name = $script:ToolName
         install_path = $InstallPath
         source_path = if ($script:ResolvedPackageSource -eq 'GitHub') { "github://$GitHubRepo@$GitHubRef" } else { $SourcePath }
@@ -598,6 +690,8 @@ function SaveMeta([string]$InstallRoot, [string]$Mode) {
         github_ref = $GitHubRef
         github_zip_url = $GitHubZipUrl
         github_commit = $script:ResolvedGitHubCommit
+        source_git_branch = $script:ResolvedSourceGitBranch
+        source_dirty = $script:ResolvedSourceDirty
         last_action = $Mode
         installed_utc = (Get-Date).ToUniversalTime().ToString('o')
     }
@@ -631,9 +725,10 @@ function Get-ExplorerRestartPath {
 }
 
 function RestartExplorer {
-    if ($NoExplorerRestart) { Log 'Explorer restart skipped by -NoExplorerRestart.' 'WARN'; return }
+    if ($NoExplorerRestart) { Log 'Explorer restart skipped by -NoExplorerRestart.'; return }
     if (-not $Force) {
-        $a = (Read-Host 'Restart Explorer now to refresh context menus? [Y/n]').Trim().ToLowerInvariant()
+        $restartResponse = Read-Host 'Restart Explorer now to refresh context menus? [Y/n]'
+        $a = if ($null -eq $restartResponse) { 'n' } else { $restartResponse.Trim().ToLowerInvariant() }
         if ($a -in @('n', 'no')) { Log 'Explorer restart skipped by user.' 'WARN'; return }
     }
 
@@ -691,7 +786,11 @@ function RunInstallOrUpdate([ValidateSet('Install', 'Update')] [string]$Mode) {
     Log "Starting $Mode to $InstallPath"
     foreach ($cmd in @('pwsh.exe', 'wscript.exe') + (Arr 'required_commands')) { if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) { Log "Missing required command: $cmd" 'ERROR'; return 1 } }
     EnsureDir $InstallPath; EnsureDir (Join-Path $InstallPath 'logs'); EnsureDir (Join-Path $InstallPath 'state'); EnsureDir (Join-Path $InstallPath 'assets')
-    try { $src = ResolveSourceRoot; Deploy -SourceRoot $src -InstallRoot $InstallPath } finally { foreach ($t in $script:TempPackageRoots) { try { if (Test-Path -LiteralPath $t) { Remove-Item -LiteralPath $t -Recurse -Force -ErrorAction SilentlyContinue } } catch {} } $script:TempPackageRoots.Clear() }
+    try {
+        $src = ResolveSourceRoot
+        $script:InstallerVersion = Resolve-AppVersionFromRoot -PackageRoot $src -MetadataFile $script:AppMetadataFile -FallbackVersion $script:InstallerVersion
+        Deploy -SourceRoot $src -InstallRoot $InstallPath
+    } finally { foreach ($t in $script:TempPackageRoots) { try { if (Test-Path -LiteralPath $t) { Remove-Item -LiteralPath $t -Recurse -Force -ErrorAction SilentlyContinue } } catch {} } $script:TempPackageRoots.Clear() }
     PatchWrappers -InstallRoot $InstallPath
     $coreOk = VerifyCore -InstallRoot $InstallPath
     WriteRegistry -InstallRoot $InstallPath
@@ -740,16 +839,31 @@ function Start-RelaunchUpdatedInstaller([string]$TargetRoot) {
 
     $pwshCmd = Get-Command pwsh.exe -ErrorAction SilentlyContinue
     $pwshExe = if ($null -ne $pwshCmd) { $pwshCmd.Source } else { Join-Path $PSHOME 'pwsh.exe' }
-    $launcherPath = Join-Path $env:TEMP ("{0}_relaunch_{1}.cmd" -f $script:ToolName, [guid]::NewGuid().ToString('N'))
-    $launcherContent = @(
-        '@echo off',
-        'setlocal',
-        'timeout /t 2 /nobreak >nul',
-        ('start "" "{0}" -ExecutionPolicy Bypass -File "{1}"' -f $pwshExe, $updatedInstaller),
-        'del "%~f0"'
-    )
-    Set-Content -LiteralPath $launcherPath -Value $launcherContent -Encoding ASCII
-    Start-Process -FilePath $launcherPath -WindowStyle Hidden | Out-Null
+    if (-not (Test-Path -LiteralPath $pwshExe -PathType Leaf)) {
+        throw "pwsh.exe was not found for relaunch: $pwshExe"
+    }
+
+    if ($script:IsWindowsTerminalSession) {
+        $wtCommand = Get-Command wt.exe -ErrorAction SilentlyContinue
+        if ($null -ne $wtCommand) {
+            Start-Process -FilePath $wtCommand.Source -ArgumentList @(
+                '-w', 'new',
+                'nt',
+                '--title', $script:ToolName,
+                'pwsh.exe',
+                '-NoProfile',
+                '-ExecutionPolicy', 'Bypass',
+                '-File', $updatedInstaller
+            ) | Out-Null
+            return
+        }
+    }
+
+    Start-Process -FilePath $pwshExe -ArgumentList @(
+        '-NoProfile',
+        '-ExecutionPolicy', 'Bypass',
+        '-File', $updatedInstaller
+    ) | Out-Null
 }
 
 function RunDownloadLatest {
@@ -763,11 +877,16 @@ function RunDownloadLatest {
 
     $originalSourcePath = $SourcePath
     $originalPackageSource = $PackageSource
+    $originalInstallPath = $InstallPath
+    $originalInstallerLogPath = $script:InstallerLogPath
     try {
         $PackageSource = 'GitHub'
         Set-Variable -Name PackageSource -Scope Script -Value 'GitHub'
         $SourcePath = $targetRoot
         Set-Variable -Name SourcePath -Scope Script -Value $targetRoot
+        $InstallPath = $targetRoot
+        Set-Variable -Name InstallPath -Scope Script -Value $targetRoot
+        $script:InstallerLogPath = Join-Path $targetRoot 'logs\installer.log'
 
         EnsureGitHubRefResolved
         if (-not $script:HasCliArgs) {
@@ -788,13 +907,20 @@ function RunDownloadLatest {
             return 2
         }
 
-        Start-RelaunchUpdatedInstaller -TargetRoot $targetRoot
-        Write-Host 'Latest files downloaded successfully. Relaunching updated installer...' -ForegroundColor Green
+        if (-not $NoSelfRelaunch) {
+            Start-RelaunchUpdatedInstaller -TargetRoot $targetRoot
+            Write-Host 'Latest files downloaded successfully. Relaunching updated installer...' -ForegroundColor Green
+        }
+        else {
+            Write-Host 'Latest files downloaded successfully.' -ForegroundColor Green
+        }
         return 0
     }
     finally {
         Set-Variable -Name SourcePath -Scope Script -Value $originalSourcePath
         Set-Variable -Name PackageSource -Scope Script -Value $originalPackageSource
+        Set-Variable -Name InstallPath -Scope Script -Value $originalInstallPath
+        $script:InstallerLogPath = $originalInstallerLogPath
         CleanupTempPackageRoots
     }
 }
@@ -943,7 +1069,16 @@ switch ($Action) {
     'Update' { PreparePackageSource -Mode 'Update'; if (-not (Confirm "Update existing $($script:DisplayName) at '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunInstallOrUpdate -Mode 'Update') }
     'UpdateGitHub' { $PackageSource = 'GitHub'; EnsureGitHubRefResolved; Write-Host ("Using GitHub ref: {0}" -f $GitHubRef) -ForegroundColor DarkCyan; if (-not (Confirm "Update existing $($script:DisplayName) at '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunInstallOrUpdate -Mode 'Update') }
     'Uninstall' { if (-not (Confirm "Uninstall $($script:DisplayName) from '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunUninstall) }
-    'DownloadLatest' { if (-not (Confirm "Download latest $($script:DisplayName) into '$PSScriptRoot' and relaunch the updated installer?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunDownloadLatest) }
+    'DownloadLatest' {
+        $downloadPrompt = if ($NoSelfRelaunch) {
+            "Download latest $($script:DisplayName) into '$PSScriptRoot'?"
+        }
+        else {
+            "Download latest $($script:DisplayName) into '$PSScriptRoot' and relaunch the updated installer?"
+        }
+        if (-not (Confirm $downloadPrompt)) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }
+        exit (RunDownloadLatest)
+    }
     'OpenInstallDirectory' { if (-not (Test-Path -LiteralPath $InstallPath)) { Write-Host ("Install directory not found: {0}" -f $InstallPath) -ForegroundColor Yellow; exit 1 }; Start-Process explorer.exe -ArgumentList $InstallPath; exit 0 }
     'OpenInstallLogs' { $logFile = Join-Path $InstallPath 'logs\\installer.log'; $logDir = Split-Path -Path $logFile -Parent; EnsureDir $logDir; if (Test-Path -LiteralPath $logFile) { Start-Process notepad.exe -ArgumentList $logFile } else { Start-Process explorer.exe -ArgumentList $logDir }; exit 0 }
     default { Write-Host "Unknown action: $Action" -ForegroundColor Red; exit 1 }

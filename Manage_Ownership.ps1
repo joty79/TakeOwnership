@@ -11,6 +11,366 @@ $RunAsTI        = if (Test-Path -LiteralPath $BundledRunAsTI) { $BundledRunAsTI 
 # 🔸 Force UTF-8 Encoding
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
+$script:AppName = 'TakeOwnership'
+$script:AppVersion = '1.0.0'
+$script:GitHubRepo = 'joty79/TakeOwnership'
+$script:MetadataPath = Join-Path $PSScriptRoot 'app-metadata.json'
+$script:StatePath = Join-Path $PSScriptRoot 'state'
+$script:InstallMetaPath = Join-Path $script:StatePath 'install-meta.json'
+$script:UpdateStatusCachePath = Join-Path $script:StatePath 'app-update-status.json'
+$script:UpdateStatusCacheTtlMinutes = 30
+$script:UpdateStatus = $null
+
+function New-UpdateStatus {
+    param(
+        [string]$LocalVersion = $script:AppVersion,
+        [AllowEmptyString()][string]$LatestVersion = '',
+        [AllowEmptyString()][string]$Repo = $script:GitHubRepo,
+        [AllowEmptyString()][string]$Branch = '',
+        [ValidateSet('Unknown', 'UpToDate', 'UpdateAvailable', 'LocalAhead', 'Error')]
+        [string]$Status = 'Unknown',
+        [string]$Message = 'Update status has not been checked yet.',
+        [AllowEmptyString()][string]$CheckedAt = '',
+        [AllowEmptyString()][string]$LocalCommit = '',
+        [AllowEmptyString()][string]$RemoteCommit = ''
+    )
+
+    [pscustomobject]@{
+        LocalVersion  = $LocalVersion
+        LatestVersion = $LatestVersion
+        Repo          = $Repo
+        Branch        = $Branch
+        Status        = $Status
+        Message       = $Message
+        CheckedAt     = $CheckedAt
+        LocalCommit   = $LocalCommit
+        RemoteCommit  = $RemoteCommit
+    }
+}
+
+function Initialize-AppMetadata {
+    $script:UpdateStatus = New-UpdateStatus
+    if (-not (Test-Path -LiteralPath $script:MetadataPath -PathType Leaf)) { return }
+
+    try {
+        $metadata = Get-Content -LiteralPath $script:MetadataPath -Raw | ConvertFrom-Json
+        $nameProperty = $metadata.PSObject.Properties['app_name']
+        if ($null -ne $nameProperty -and -not [string]::IsNullOrWhiteSpace([string]$nameProperty.Value)) {
+            $script:AppName = [string]$nameProperty.Value
+        }
+
+        $versionProperty = $metadata.PSObject.Properties['version']
+        if ($null -ne $versionProperty -and -not [string]::IsNullOrWhiteSpace([string]$versionProperty.Value)) {
+            $script:AppVersion = [string]$versionProperty.Value
+        }
+
+        $repoProperty = $metadata.PSObject.Properties['github_repo']
+        if ($null -ne $repoProperty -and -not [string]::IsNullOrWhiteSpace([string]$repoProperty.Value)) {
+            $script:GitHubRepo = [string]$repoProperty.Value
+        }
+
+        $script:UpdateStatus = New-UpdateStatus -LocalVersion $script:AppVersion -Repo $script:GitHubRepo
+    }
+    catch {
+        $script:UpdateStatus = New-UpdateStatus -Status 'Error' -Message 'Could not read local app metadata.'
+    }
+}
+
+function ConvertTo-AppVersion {
+    param([AllowEmptyString()][string]$VersionText)
+
+    if ([string]::IsNullOrWhiteSpace($VersionText)) { return $null }
+    try { return [version]$VersionText }
+    catch { return $null }
+}
+
+function Read-UpdateStatusCache {
+    param([switch]$AllowStale)
+
+    if (-not (Test-Path -LiteralPath $script:UpdateStatusCachePath -PathType Leaf)) { return $null }
+
+    try {
+        $cacheItem = Get-Item -LiteralPath $script:UpdateStatusCachePath -ErrorAction Stop
+        if (-not $AllowStale -and ((Get-Date) - $cacheItem.LastWriteTime).TotalMinutes -gt $script:UpdateStatusCacheTtlMinutes) {
+            return $null
+        }
+
+        $cache = Get-Content -LiteralPath $script:UpdateStatusCachePath -Raw | ConvertFrom-Json
+        return (New-UpdateStatus `
+            -LocalVersion ([string]$cache.LocalVersion) `
+            -LatestVersion ([string]$cache.LatestVersion) `
+            -Repo ([string]$cache.Repo) `
+            -Branch ([string]$cache.Branch) `
+            -Status ([string]$cache.Status) `
+            -Message ([string]$cache.Message) `
+            -CheckedAt ([string]$cache.CheckedAt) `
+            -LocalCommit ([string]$cache.LocalCommit) `
+            -RemoteCommit ([string]$cache.RemoteCommit))
+    }
+    catch {
+        return $null
+    }
+}
+
+function Write-UpdateStatusCache {
+    param([Parameter(Mandatory)]$Status)
+
+    try {
+        if (-not (Test-Path -LiteralPath $script:StatePath -PathType Container)) {
+            New-Item -Path $script:StatePath -ItemType Directory -Force | Out-Null
+        }
+        $Status | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $script:UpdateStatusCachePath -Encoding UTF8
+    }
+    catch {}
+}
+
+function Get-RemoteAppMetadata {
+    if ([string]::IsNullOrWhiteSpace($script:GitHubRepo)) { return $null }
+
+    foreach ($branch in @('master', 'main')) {
+        $rawUri = "https://raw.githubusercontent.com/$($script:GitHubRepo)/$branch/app-metadata.json"
+        try {
+            $metadata = Invoke-RestMethod -Uri $rawUri -Method Get -Headers @{ 'User-Agent' = "$($script:AppName)/$($script:AppVersion)" } -TimeoutSec 8
+            if ($null -ne $metadata) {
+                return [pscustomobject]@{
+                    Metadata = $metadata
+                    Repo     = $script:GitHubRepo
+                    Branch   = $branch
+                }
+            }
+        }
+        catch {}
+    }
+
+    return $null
+}
+
+function Get-InstalledCommitInfo {
+    $result = [ordered]@{
+        GitHubCommit = ''
+        GitHubRef    = ''
+    }
+
+    if (-not (Test-Path -LiteralPath $script:InstallMetaPath -PathType Leaf)) {
+        return [pscustomobject]$result
+    }
+
+    try {
+        $installMeta = Get-Content -LiteralPath $script:InstallMetaPath -Raw | ConvertFrom-Json
+        foreach ($item in @(
+            @{ Name = 'github_commit'; Target = 'GitHubCommit' },
+            @{ Name = 'github_ref'; Target = 'GitHubRef' }
+        )) {
+            $property = $installMeta.PSObject.Properties[$item.Name]
+            if ($null -ne $property -and -not [string]::IsNullOrWhiteSpace([string]$property.Value)) {
+                $result[$item.Target] = [string]$property.Value
+            }
+        }
+    }
+    catch {}
+
+    return [pscustomobject]$result
+}
+
+function Get-RemoteCommit {
+    param(
+        [AllowEmptyString()][string]$Repo = $script:GitHubRepo,
+        [AllowEmptyString()][string]$Ref = 'master'
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Repo) -or [string]::IsNullOrWhiteSpace($Ref)) { return '' }
+
+    try {
+        $commitInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/commits/$Ref" -Method Get -Headers @{ 'User-Agent' = "$($script:AppName)/$($script:AppVersion)" } -TimeoutSec 8
+        if ($null -ne $commitInfo -and -not [string]::IsNullOrWhiteSpace([string]$commitInfo.sha)) {
+            return [string]$commitInfo.sha
+        }
+    }
+    catch {}
+
+    return ''
+}
+
+function Resolve-UpdateStatus {
+    param([switch]$ForceRefresh)
+
+    if (-not $ForceRefresh) {
+        $cachedStatus = Read-UpdateStatusCache
+        if ($null -ne $cachedStatus) {
+            $script:UpdateStatus = $cachedStatus
+            return $script:UpdateStatus
+        }
+    }
+
+    $staleCachedStatus = Read-UpdateStatusCache -AllowStale
+    $remoteInfo = Get-RemoteAppMetadata
+    if ($null -eq $remoteInfo) {
+        if ($null -ne $staleCachedStatus) {
+            $staleCachedStatus.Message = 'Using cached update status because GitHub could not be reached.'
+            $script:UpdateStatus = $staleCachedStatus
+            return $script:UpdateStatus
+        }
+
+        $script:UpdateStatus = New-UpdateStatus -LocalVersion $script:AppVersion -Repo $script:GitHubRepo -Status 'Error' -Message 'Could not reach GitHub to check updates.' -CheckedAt ((Get-Date).ToString('s'))
+        return $script:UpdateStatus
+    }
+
+    $latestVersionProperty = $remoteInfo.Metadata.PSObject.Properties['version']
+    $latestVersion = if ($null -ne $latestVersionProperty) { [string]$latestVersionProperty.Value } else { '' }
+    $localVersionObject = ConvertTo-AppVersion -VersionText $script:AppVersion
+    $remoteVersionObject = ConvertTo-AppVersion -VersionText $latestVersion
+    $statusName = 'Unknown'
+    $statusMessage = 'Update status is unavailable.'
+    $commitInfo = Get-InstalledCommitInfo
+    $localCommit = [string]$commitInfo.GitHubCommit
+    $remoteCommit = Get-RemoteCommit -Repo ([string]$remoteInfo.Repo) -Ref ([string]$remoteInfo.Branch)
+
+    if ($null -ne $localVersionObject -and $null -ne $remoteVersionObject) {
+        if ($localVersionObject -lt $remoteVersionObject) {
+            $statusName = 'UpdateAvailable'
+            $statusMessage = "Update available: v$latestVersion"
+        }
+        elseif ($localVersionObject -gt $remoteVersionObject) {
+            $statusName = 'LocalAhead'
+            $statusMessage = "Local version v$script:AppVersion is ahead of origin."
+        }
+        else {
+            $statusName = 'UpToDate'
+            $statusMessage = "App is up to date at v$latestVersion."
+        }
+    }
+
+    if ($statusName -in @('UpToDate', 'Unknown') -and
+        -not [string]::IsNullOrWhiteSpace($localCommit) -and
+        -not [string]::IsNullOrWhiteSpace($remoteCommit) -and
+        $localCommit -ne $remoteCommit) {
+        $statusName = 'UpdateAvailable'
+        $statusMessage = "Update available: remote $($remoteInfo.Branch) has newer code."
+    }
+
+    $script:UpdateStatus = New-UpdateStatus `
+        -LocalVersion $script:AppVersion `
+        -LatestVersion $latestVersion `
+        -Repo ([string]$remoteInfo.Repo) `
+        -Branch ([string]$remoteInfo.Branch) `
+        -Status $statusName `
+        -Message $statusMessage `
+        -LocalCommit $localCommit `
+        -RemoteCommit $remoteCommit `
+        -CheckedAt ((Get-Date).ToString('s'))
+
+    Write-UpdateStatusCache -Status $script:UpdateStatus
+    return $script:UpdateStatus
+}
+
+function Get-UpdateLabel {
+    if ($null -eq $script:UpdateStatus) { $script:UpdateStatus = New-UpdateStatus }
+
+    switch ([string]$script:UpdateStatus.Status) {
+        'UpToDate' { return 'Up to date' }
+        'UpdateAvailable' {
+            if ([string]::IsNullOrWhiteSpace([string]$script:UpdateStatus.LatestVersion)) { return 'Update available' }
+            return "Update available ($($script:UpdateStatus.LatestVersion))"
+        }
+        'LocalAhead' { return 'Local version ahead' }
+        'Error' { return 'Update check failed' }
+        default { return 'Status unavailable' }
+    }
+}
+
+function Get-InstallerAction {
+    $defaultInstallPath = [System.IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'TakeOwnershipContext')).TrimEnd('\')
+    $currentRootPath = [System.IO.Path]::GetFullPath($PSScriptRoot).TrimEnd('\')
+    if ($currentRootPath -ieq $defaultInstallPath) {
+        return 'UpdateGitHub'
+    }
+
+    return 'DownloadLatest'
+}
+
+function Invoke-AppUpdate {
+    $installerPath = Join-Path $PSScriptRoot 'Install.ps1'
+    if (-not (Test-Path -LiteralPath $installerPath -PathType Leaf)) {
+        return [pscustomobject]@{ Success = $false; Message = 'Install.ps1 was not found next to this script.' }
+    }
+
+    $pwshCommand = Get-Command pwsh.exe -ErrorAction SilentlyContinue
+    if ($null -eq $pwshCommand -or -not (Test-Path -LiteralPath $pwshCommand.Source -PathType Leaf)) {
+        return [pscustomobject]@{ Success = $false; Message = 'pwsh.exe was not found.' }
+    }
+
+    $action = Get-InstallerAction
+    $arguments = @(
+        '-NoProfile',
+        '-ExecutionPolicy', 'Bypass',
+        '-File', $installerPath,
+        '-Action', $action,
+        '-Force'
+    )
+
+    if ($action -eq 'UpdateGitHub') {
+        $arguments += '-NoExplorerRestart'
+    }
+    if ($action -eq 'DownloadLatest') {
+        $arguments += '-NoSelfRelaunch'
+    }
+
+    Write-Host ""
+    Write-Host "Updating $script:AppName..." -ForegroundColor Cyan
+    Write-Host "Action: $action" -ForegroundColor DarkGray
+    Write-Host ""
+
+    try {
+        $process = Start-Process -FilePath $pwshCommand.Source -ArgumentList $arguments -WorkingDirectory $PSScriptRoot -Wait -PassThru
+        if ([int]$process.ExitCode -eq 0) {
+            return [pscustomobject]@{ Success = $true; Message = 'Update completed. Reopen this tool to use refreshed files.' }
+        }
+
+        return [pscustomobject]@{ Success = $false; Message = "Update failed with exit code $($process.ExitCode)." }
+    }
+    catch {
+        return [pscustomobject]@{ Success = $false; Message = "Could not start updater: $($_.Exception.Message)" }
+    }
+}
+
+function Show-UpdateMenu {
+    do {
+        Clear-Host
+        Write-Host "🔵 $script:AppName Update" -ForegroundColor Cyan
+        Write-Host "------------------------------"
+        Write-Host "Current version: $script:AppVersion" -ForegroundColor Gray
+        Write-Host "Latest version : $(if ([string]::IsNullOrWhiteSpace([string]$script:UpdateStatus.LatestVersion)) { '--' } else { $script:UpdateStatus.LatestVersion })" -ForegroundColor Gray
+        Write-Host "Update        : $(Get-UpdateLabel)" -ForegroundColor Yellow
+        Write-Host "Repo / branch : $($script:UpdateStatus.Repo) / $(if ([string]::IsNullOrWhiteSpace([string]$script:UpdateStatus.Branch)) { '--' } else { $script:UpdateStatus.Branch })" -ForegroundColor DarkGray
+        Write-Host "Message       : $($script:UpdateStatus.Message)" -ForegroundColor DarkGray
+        Write-Host "------------------------------"
+        Write-Host "[1] Run update now" -ForegroundColor White
+        Write-Host "[2] Refresh update status" -ForegroundColor White
+        Write-Host "[3] Back" -ForegroundColor Gray
+        Write-Host "------------------------------"
+        $choice = Read-Host "Choose Action"
+
+        switch ($choice) {
+            "1" {
+                $result = Invoke-AppUpdate
+                if ($result.Success) {
+                    Write-Host $result.Message -ForegroundColor Green
+                }
+                else {
+                    Write-Host $result.Message -ForegroundColor Red
+                }
+                Write-Host "`nPress any key..." -ForegroundColor Gray
+                $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+                [void](Resolve-UpdateStatus -ForceRefresh)
+            }
+            "2" {
+                [void](Resolve-UpdateStatus -ForceRefresh)
+            }
+            "3" { return }
+        }
+    } while ($true)
+}
+
 # ---
 # 🔵 PHASE 1: SELF-ELEVATION TO TI (with Safe Mode fallback)
 # ---
@@ -52,6 +412,8 @@ if ($isSafeMode) {
 # ---
 Start-Service TrustedInstaller -ErrorAction SilentlyContinue
 if (!(Test-Path $BackupDir)) { New-Item -ItemType Directory -Path $BackupDir | Out-Null }
+Initialize-AppMetadata
+[void](Resolve-UpdateStatus)
 
 $MD5 = [System.Security.Cryptography.HashAlgorithm]::Create("MD5")
 if ($TargetFile) {
@@ -165,14 +527,16 @@ function Restore-Ownership {
 # ---
 do {
     Clear-Host
-    Write-Host "🔵 OWNERSHIP MANAGER (V10 - AUTO RECURSIVE)" -ForegroundColor Cyan
+    Write-Host "🔵 $script:AppName v$script:AppVersion (V10 - AUTO RECURSIVE)" -ForegroundColor Cyan
     Write-Host "   User: $CurrentID" -ForegroundColor DarkGray
+    Write-Host "   Update: $(Get-UpdateLabel)" -ForegroundColor DarkGray
     Write-Host "   Target: $TargetFile" -ForegroundColor Gray
     Write-Host "------------------------------"
     
     Write-Host "[1]   Take Ownership" -ForegroundColor White
     Write-Host "[2]   Restore Original" -ForegroundColor White
-    Write-Host "[3] [X] Exit" -ForegroundColor Gray
+    Write-Host "[3] ⟳  Update app" -ForegroundColor White
+    Write-Host "[4] [X] Exit" -ForegroundColor Gray
     
     Write-Host "------------------------------"
     $Choice = Read-Host "🔸 Choose Action"
@@ -180,6 +544,7 @@ do {
     switch ($Choice) {
         "1" { Take-Ownership; Write-Host "`nPress any key..." -ForegroundColor Gray; $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") }
         "2" { Restore-Ownership; Write-Host "`nPress any key..." -ForegroundColor Gray; $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") }
-        "3" { exit }
+        "3" { Show-UpdateMenu }
+        "4" { exit }
     }
 } while ($true)

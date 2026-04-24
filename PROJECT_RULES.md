@@ -8,6 +8,7 @@
 - Keep tool logic in `Manage_Ownership.ps1`, hidden launcher in `SilentOwnership.vbs`, and manual integration in `Manage_Ownership.reg`.
 - Avoid hardcoded absolute script paths; resolve runtime dependencies from script-relative install paths first.
 - Installer-managed registry keys must live under `HKCU\Software\Classes\...` and cleanup should include `HKCR\...` merged-view leftovers.
+- Keep the ownership manager UI plain-`pwsh` compatible. Do not add Windows Terminal bootstrap or WT-only TUI assumptions to `Manage_Ownership.ps1`, because the RunAsTI launch chain is special and does not behave like the other WT-first tools.
 
 ## Decision Log
 
@@ -83,3 +84,11 @@
 - Guardrail/rule: For native command output suppression in hot paths, always use `> $null 2>&1` stream redirection instead of variable capture or `| Out-Null`. Check success via `` without collecting output.
 - Files affected: `Manage_Ownership.ps1`, `PROJECT_RULES.md`.
 - Validation/tests run: Static review of output suppression patterns; verified `` checks remain functional.
+
+### Entry - 2026-04-24 (Plain-pwsh in-app update UI and current InstallerCore baseline)
+- Date: 2026-04-24
+- Problem: `TakeOwnership` was behind the current `InstallerCore` generated installer baseline and had no in-script update status/menu entry.
+- Root cause: The repo was onboarded to `InstallerCore` before the latest metadata/prompt fixes, and unlike WT-first tools its RunAsTI path requires a plain `pwsh` UI instead of the shared WT TUI blueprint.
+- Guardrail/rule: Keep `Install.ps1` generated from the current `InstallerCore` profile, deploy `app-metadata.json`, and expose update status/actions in `Manage_Ownership.ps1` with a compact numbered menu that does not bootstrap to Windows Terminal.
+- Files affected: `Manage_Ownership.ps1`, `Install.ps1`, `app-metadata.json`, `README.md`, `CHANGELOG.md`, `PROJECT_RULES.md`, `InstallerCore\\profiles\\TakeOwnership.json`.
+- Validation/tests run: PowerShell parser validation passed for `Install.ps1` and `Manage_Ownership.ps1`; `app-metadata.json` and `InstallerCore\\profiles\\TakeOwnership.json` parsed as JSON; regenerated `Install.ps1`; non-admin `Install.ps1 -Action Update -PackageSource Local -NoExplorerRestart -Force` completed with exit code `0`; registry command readback confirmed installed `SilentOwnership.vbs` paths.

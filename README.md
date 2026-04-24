@@ -19,6 +19,7 @@
 | # | Tool | Description |
 |:-:|------|-------------|
 | 🛡️ | **[Ownership Manager](#%EF%B8%8F-ownership-manager)** | Interactive take/restore ownership with ACL backup and TI elevation |
+| 🔄 | **[In-app Update](#-in-app-update)** | Plain PowerShell update status and installer-driven refresh from the main menu |
 | 👻 | **[Silent Launcher](#-silent-launcher)** | Zero-flash VBS wrapper that hides all intermediate windows |
 | ⚡ | **[RunAsTI Engine](#-runasti-engine)** | TrustedInstaller token impersonation without third-party tools |
 
@@ -63,7 +64,11 @@ A two-action interactive menu that backs up the original SDDL before taking owne
 │  │     • Set-Acl (recursive)      │                          │
 │  │     • Progress bar per item    │                          │
 │  │                                │                          │
-│  │ [3] Exit                      │                          │
+│  │ [3] Update app                │                          │
+│  │     • Check version/commit     │                          │
+│  │     • Run generated installer  │                          │
+│  │                                │                          │
+│  │ [4] Exit                      │                          │
 │  └────────────────────────────────┘                         │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -99,6 +104,26 @@ ACL_Backups/
 ```
 
 Each `.sddl` file contains the original security descriptor. As long as the backup exists, **Restore** will return the target to its exact original state.
+
+---
+
+## 🔄 In-app Update
+
+> `TakeOwnership` shows update status in the main header and exposes update actions from the same plain PowerShell menu.
+
+This tool intentionally does **not** bootstrap into Windows Terminal. The RunAsTI chain works best in the current `pwsh` host, so the update UI stays compact and numbered instead of using the resize-safe WT TUI pattern used by other tools.
+
+```
+OWNERSHIP MANAGER
+  Update: Up to date / Update available
+
+[1] Take Ownership
+[2] Restore Original
+[3] Update app
+[4] Exit
+```
+
+The update action reuses the generated `Install.ps1` instead of duplicating install logic in the ownership script.
 
 ---
 
@@ -213,6 +238,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\Install.ps1 -Action Uninstall -F
 ### What the Installer Does
 
 - Copies runtime files to `%LOCALAPPDATA%\TakeOwnershipContext\`
+- Deploys `app-metadata.json` for version/update status
 - Bundles `assets\RunAsTI\RunAsTI.ps1` alongside the main script
 - Registers context menu entries under the shared **System Tools** submenu:
   - `*\shell\SystemTools\shell\TakeOwnership` — files
@@ -234,6 +260,8 @@ TakeOwnership/
 ├── Manage_Ownership.ps1           # Main ownership manager (TI-elevated)
 ├── SilentOwnership.vbs            # Zero-flash VBS launcher
 ├── Install.ps1                    # Installer/updater/uninstaller
+├── app-metadata.json              # App version/repo metadata for update checks
+├── CHANGELOG.md                   # Shipped change history
 ├── Manage_Ownership.reg           # Static registry sample (manual import)
 ├── Manage_Ownership - Remove.reg  # Registry cleanup (manual removal)
 ├── assets/
