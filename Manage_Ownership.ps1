@@ -288,6 +288,117 @@ function Get-InstallerAction {
     return 'DownloadLatest'
 }
 
+function Get-RecentTextFileLines {
+    param(
+        [AllowEmptyString()][string]$Path,
+        [int]$TailCount = 10
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        return @()
+    }
+
+    try {
+        return @(Get-Content -LiteralPath $Path -Tail $TailCount -ErrorAction Stop | ForEach-Object { [string]$_ })
+    }
+    catch {
+        return @()
+    }
+}
+
+function Write-UpdateSection {
+    param([string]$Title)
+
+    Write-Host ""
+    Write-Host "◆ $Title " -ForegroundColor Cyan -NoNewline
+    Write-Host ("-" * 58) -ForegroundColor DarkGray
+}
+
+function Show-AppUpdateResultPanel {
+    param(
+        [string]$ResultMessage,
+        [ValidateSet('Info', 'Good', 'Warn', 'Error')]
+        [string]$Level = 'Info',
+        [string[]]$RecentLines = @(),
+        [switch]$AutoRestart
+    )
+
+    $messageColor = switch ($Level) {
+        'Good' { 'Green' }
+        'Warn' { 'Yellow' }
+        'Error' { 'Red' }
+        default { 'Cyan' }
+    }
+
+    Clear-Host
+    Write-Host "╔══════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host ("║ {0} v{1}" -f $script:AppName, $script:AppVersion).PadRight(79) -NoNewline
+    Write-Host "║" -ForegroundColor Cyan
+    Write-Host "║ Ownership + TrustedInstaller + Context Menu".PadRight(79) -NoNewline
+    Write-Host "║" -ForegroundColor Cyan
+    Write-Host ("║ Update: {0}" -f (Get-UpdateLabel)).PadRight(79) -NoNewline
+    Write-Host "║" -ForegroundColor Cyan
+    Write-Host "╚══════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+
+    Write-UpdateSection -Title 'Update App'
+    Write-Host "  $ResultMessage" -ForegroundColor $messageColor
+
+    if (@($RecentLines).Count -gt 0) {
+        Write-UpdateSection -Title 'Recent Output'
+        foreach ($line in @($RecentLines | Select-Object -Last 10)) {
+            $displayLine = [string]$line
+            if ($displayLine.Length -gt 118) {
+                $displayLine = $displayLine.Substring(0, 115) + '...'
+            }
+            Write-Host "  $displayLine" -ForegroundColor DarkGray
+        }
+    }
+
+    Write-UpdateSection -Title 'Commands'
+    if ($AutoRestart) {
+        Write-Host "  Restarting $script:AppName in pwsh..." -ForegroundColor Green
+    }
+    else {
+        Write-Host "  ESC back" -ForegroundColor Red
+    }
+}
+
+function Start-UpdatedAppHost {
+    param([string]$AppRoot = $PSScriptRoot)
+
+    $appPath = Join-Path $AppRoot 'Manage_Ownership.ps1'
+    if (-not (Test-Path -LiteralPath $appPath -PathType Leaf)) {
+        return $false
+    }
+
+    $pwshCommand = Get-Command pwsh.exe -ErrorAction SilentlyContinue
+    if ($null -eq $pwshCommand -or -not (Test-Path -LiteralPath $pwshCommand.Source -PathType Leaf)) {
+        return $false
+    }
+
+    $arguments = @(
+        '-NoProfile',
+        '-ExecutionPolicy', 'Bypass',
+        '-File', $appPath
+    )
+    if (-not [string]::IsNullOrWhiteSpace($TargetFile)) {
+        $arguments += @('-TargetFile', $TargetFile)
+    }
+
+    try {
+        Start-Process -FilePath $pwshCommand.Source -ArgumentList $arguments -WorkingDirectory $AppRoot | Out-Null
+        return $true
+    }
+    catch {
+        return $false
+    }
+}
+
+function Request-ApplicationHostExit {
+    try { $Host.SetShouldExit(0) } catch {}
+    exit 0
+}
+
 function Invoke-AppUpdate {
     $installerPath = Join-Path $PSScriptRoot 'Install.ps1'
     if (-not (Test-Path -LiteralPath $installerPath -PathType Leaf)) {
@@ -315,21 +426,52 @@ function Invoke-AppUpdate {
         $arguments += '-NoSelfRelaunch'
     }
 
-    Write-Host ""
-    Write-Host "Updating $script:AppName..." -ForegroundColor Cyan
-    Write-Host "Action: $action" -ForegroundColor DarkGray
-    Write-Host ""
+    $progressMessage = if ($action -eq 'UpdateGitHub') {
+        'Updating from GitHub inside the current app session...'
+    }
+    else {
+        'Updating this working copy with the best available repo-aware path...'
+    }
+    $stdoutPath = Join-Path $env:TEMP ("TakeOwnership_updater_out_{0}.log" -f [guid]::NewGuid().ToString('N'))
+    $stderrPath = Join-Path $env:TEMP ("TakeOwnership_updater_err_{0}.log" -f [guid]::NewGuid().ToString('N'))
+    $installerLogPath = Join-Path $PSScriptRoot 'logs\installer.log'
 
     try {
-        $process = Start-Process -FilePath $pwshCommand.Source -ArgumentList $arguments -WorkingDirectory $PSScriptRoot -Wait -PassThru
-        if ([int]$process.ExitCode -eq 0) {
-            return [pscustomobject]@{ Success = $true; Message = 'Update completed. Reopen this tool to use refreshed files.' }
+        $process = Start-Process -FilePath $pwshCommand.Source -ArgumentList $arguments -WorkingDirectory $PSScriptRoot -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath -WindowStyle Hidden -PassThru
+        while (-not $process.HasExited) {
+            $recentLines = @((Get-RecentTextFileLines -Path $installerLogPath -TailCount 8) + (Get-RecentTextFileLines -Path $stderrPath -TailCount 3))
+            Show-AppUpdateResultPanel -ResultMessage $progressMessage -Level 'Info' -RecentLines $recentLines
+            Start-Sleep -Milliseconds 250
         }
 
-        return [pscustomobject]@{ Success = $false; Message = "Update failed with exit code $($process.ExitCode)." }
+        $process.Refresh()
+        $exitCode = [int]$process.ExitCode
+        $finalLines = @((Get-RecentTextFileLines -Path $installerLogPath -TailCount 8) + (Get-RecentTextFileLines -Path $stderrPath -TailCount 5))
+        if ($exitCode -le 2) {
+            Show-AppUpdateResultPanel -ResultMessage 'Update finished. Restarting the updated app host and closing this window...' -Level 'Good' -RecentLines $finalLines -AutoRestart
+            Start-Sleep -Milliseconds 900
+            if (Start-UpdatedAppHost -AppRoot $PSScriptRoot) {
+                Request-ApplicationHostExit
+            }
+
+            return [pscustomobject]@{ Success = $false; Message = 'Update finished, but the app could not relaunch automatically.' }
+        }
+
+        Show-AppUpdateResultPanel -ResultMessage ("Update failed with exit code {0}." -f $exitCode) -Level 'Error' -RecentLines $finalLines
+        return [pscustomobject]@{ Success = $false; Message = "Update failed with exit code $exitCode." }
     }
     catch {
         return [pscustomobject]@{ Success = $false; Message = "Could not start updater: $($_.Exception.Message)" }
+    }
+    finally {
+        foreach ($tempPath in @($stdoutPath, $stderrPath)) {
+            try {
+                if (Test-Path -LiteralPath $tempPath -PathType Leaf) {
+                    Remove-Item -LiteralPath $tempPath -Force -ErrorAction SilentlyContinue
+                }
+            }
+            catch {}
+        }
     }
 }
 

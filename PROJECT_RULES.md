@@ -100,3 +100,11 @@
 - Guardrail/rule: Runtime checks in `Manage_Ownership.ps1` must be PowerShell 7 compatible. Prefer `Get-CimInstance` with guarded `try/catch` for WMI/CIM queries, and do not rely on parser validation alone for removed cmdlets.
 - Files affected: `Manage_Ownership.ps1`, `CHANGELOG.md`, `PROJECT_RULES.md`.
 - Validation/tests run: Parser validation passed for `Manage_Ownership.ps1`; search confirmed `Get-WmiObject` is absent; local installer update redeployed the fixed script.
+
+### Entry - 2026-04-24 (Follow canonical in-app update behavior)
+- Date: 2026-04-24
+- Problem: The first TakeOwnership in-app updater only launched the installer and returned a plain success message, so it did not match the proven `WinAppManager` update UX.
+- Root cause: The implementation copied the installer action contract but skipped the app-side behavior contract: progress panel, recent installer output, automatic relaunch, and old-session exit.
+- Guardrail/rule: `TakeOwnership` must keep a plain-`pwsh` host because of the RunAsTI launch chain, but its in-app updater should still follow the `WinAppManager` behavior pattern for process visibility and relaunch. When adapting a template, copy the behavior contract, not only the command-line flags.
+- Files affected: `Manage_Ownership.ps1`, `CHANGELOG.md`, `PROJECT_RULES.md`.
+- Validation/tests run: Parser validation passed for `Manage_Ownership.ps1`; static review confirmed redirected updater process, recent log panel, `Start-UpdatedAppHost`, and old-host exit path; local installer update redeployed the fixed script.

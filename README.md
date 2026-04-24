@@ -123,7 +123,7 @@ OWNERSHIP MANAGER
 [4] Exit
 ```
 
-The update action reuses the generated `Install.ps1` instead of duplicating install logic in the ownership script.
+The update action reuses the generated `Install.ps1` instead of duplicating install logic in the ownership script. During update, the app keeps the current session visible, shows recent installer output, relaunches the refreshed `Manage_Ownership.ps1` in `pwsh`, and closes the old host.
 
 ---
 
