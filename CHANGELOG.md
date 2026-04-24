@@ -6,4 +6,4 @@
 - Added plain-`pwsh` in-app update status to the ownership manager header.
 - Added an `Update app` menu item that uses the generated `Install.ps1` flow without a Windows Terminal bootstrap.
 - Regenerated `Install.ps1` from the current `InstallerCore` template/profile so it includes null-safe prompts, info-only `-NoExplorerRestart`, and commit-aware install metadata.
-
+- Replaced the legacy `Get-WmiObject` safe-mode check with a PowerShell 7 compatible `Get-CimInstance` check.

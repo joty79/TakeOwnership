@@ -378,7 +378,13 @@ $CurrentID = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 
 # Safe Mode Detection: TrustedInstaller δεν υπάρχει σε Safe Mode
 $tiService = Get-Service TrustedInstaller -ErrorAction SilentlyContinue
-$isSafeMode = ($tiService -eq $null) -or ((Get-WmiObject Win32_ComputerSystem -ErrorAction SilentlyContinue).BootupState -match "safe|Fail")
+$bootupState = ''
+try {
+    $computerSystem = Get-CimInstance -ClassName Win32_ComputerSystem -ErrorAction Stop
+    if ($null -ne $computerSystem) { $bootupState = [string]$computerSystem.BootupState }
+}
+catch {}
+$isSafeMode = ($tiService -eq $null) -or ($bootupState -match "safe|Fail")
 
 if ($isSafeMode) {
     # Safe Mode: Elevation μόνο σε Admin (χωρίς TI)

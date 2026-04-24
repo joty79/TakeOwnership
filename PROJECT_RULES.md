@@ -92,3 +92,11 @@
 - Guardrail/rule: Keep `Install.ps1` generated from the current `InstallerCore` profile, deploy `app-metadata.json`, and expose update status/actions in `Manage_Ownership.ps1` with a compact numbered menu that does not bootstrap to Windows Terminal.
 - Files affected: `Manage_Ownership.ps1`, `Install.ps1`, `app-metadata.json`, `README.md`, `CHANGELOG.md`, `PROJECT_RULES.md`, `InstallerCore\\profiles\\TakeOwnership.json`.
 - Validation/tests run: PowerShell parser validation passed for `Install.ps1` and `Manage_Ownership.ps1`; `app-metadata.json` and `InstallerCore\\profiles\\TakeOwnership.json` parsed as JSON; regenerated `Install.ps1`; non-admin `Install.ps1 -Action Update -PackageSource Local -NoExplorerRestart -Force` completed with exit code `0`; registry command readback confirmed installed `SilentOwnership.vbs` paths.
+
+### Entry - 2026-04-24 (PowerShell 7 safe-mode check)
+- Date: 2026-04-24
+- Problem: The installed ownership manager crashed in `pwsh.exe` before showing the menu because `Get-WmiObject` is not available in PowerShell 7.
+- Root cause: The safe-mode detection path still used a Windows PowerShell 5.1-only cmdlet.
+- Guardrail/rule: Runtime checks in `Manage_Ownership.ps1` must be PowerShell 7 compatible. Prefer `Get-CimInstance` with guarded `try/catch` for WMI/CIM queries, and do not rely on parser validation alone for removed cmdlets.
+- Files affected: `Manage_Ownership.ps1`, `CHANGELOG.md`, `PROJECT_RULES.md`.
+- Validation/tests run: Parser validation passed for `Manage_Ownership.ps1`; search confirmed `Get-WmiObject` is absent; local installer update redeployed the fixed script.
