@@ -327,12 +327,69 @@ function RegCmd([AllowEmptyString()][string[]]$RegArgs, [switch]$IgnoreNotFound)
     throw "reg.exe failed: reg $($RegArgs -join ' ')`n$text"
 }
 function RegDel([string]$Key) { RegCmd -RegArgs @('delete', $Key, '/f') -IgnoreNotFound | Out-Null }
+function ResolveRegistryKeySpec([string]$Key) {
+    if ([string]::IsNullOrWhiteSpace($Key)) { throw 'Registry key is empty.' }
+
+    $normalizedKey = $Key.Trim()
+    if ($normalizedKey.StartsWith('Registry::', [System.StringComparison]::OrdinalIgnoreCase)) {
+        $normalizedKey = $normalizedKey.Substring('Registry::'.Length)
+    }
+
+    if ($normalizedKey.StartsWith('HKCU\', [System.StringComparison]::OrdinalIgnoreCase)) {
+        return [pscustomobject]@{
+            Root = [Microsoft.Win32.Registry]::CurrentUser
+            SubKey = $normalizedKey.Substring(5)
+        }
+    }
+    if ($normalizedKey.StartsWith('HKEY_CURRENT_USER\', [System.StringComparison]::OrdinalIgnoreCase)) {
+        return [pscustomobject]@{
+            Root = [Microsoft.Win32.Registry]::CurrentUser
+            SubKey = $normalizedKey.Substring('HKEY_CURRENT_USER\'.Length)
+        }
+    }
+    if ($normalizedKey.StartsWith('HKCR\', [System.StringComparison]::OrdinalIgnoreCase)) {
+        return [pscustomobject]@{
+            Root = [Microsoft.Win32.Registry]::ClassesRoot
+            SubKey = $normalizedKey.Substring(5)
+        }
+    }
+    if ($normalizedKey.StartsWith('HKEY_CLASSES_ROOT\', [System.StringComparison]::OrdinalIgnoreCase)) {
+        return [pscustomobject]@{
+            Root = [Microsoft.Win32.Registry]::ClassesRoot
+            SubKey = $normalizedKey.Substring('HKEY_CLASSES_ROOT\'.Length)
+        }
+    }
+
+    throw "Unsupported registry root in key: $Key"
+}
+function GetRegistryValueKind([string]$Type) {
+    switch ($Type.ToUpperInvariant()) {
+        'REG_SZ' { return [Microsoft.Win32.RegistryValueKind]::String }
+        'REG_EXPAND_SZ' { return [Microsoft.Win32.RegistryValueKind]::ExpandString }
+        'REG_DWORD' { return [Microsoft.Win32.RegistryValueKind]::DWord }
+        default { throw "Unsupported registry value type: $Type" }
+    }
+}
 function RegAdd([string]$Key, [string]$Name, [string]$Type, [AllowEmptyString()][string]$Value) {
     $safe = if ($Type -eq 'REG_DWORD') { if ([string]::IsNullOrWhiteSpace($Value)) { '0' } else { $Value } } else { $Value }
-    $regArgs = @('add', $Key)
-    if ($Name -eq '(default)') { $regArgs += '/ve' } else { $regArgs += @('/v', $Name) }
-    $regArgs += @('/t', $Type, '/d', $safe, '/f')
-    RegCmd -RegArgs $regArgs | Out-Null
+    $keySpec = ResolveRegistryKeySpec $Key
+    $valueName = if ($Name -eq '(default)') { '' } else { $Name }
+    $valueKind = GetRegistryValueKind $Type
+    $registryKey = $null
+    try {
+        $registryKey = $keySpec.Root.CreateSubKey($keySpec.SubKey)
+        if ($null -eq $registryKey) { throw "Could not create registry key: $Key" }
+
+        if ($valueKind -eq [Microsoft.Win32.RegistryValueKind]::DWord) {
+            $registryKey.SetValue($valueName, [int]$safe, $valueKind)
+        }
+        else {
+            $registryKey.SetValue($valueName, $safe, $valueKind)
+        }
+    }
+    finally {
+        if ($null -ne $registryKey) { $registryKey.Dispose() }
+    }
     if ($Type -in @('REG_SZ', 'REG_EXPAND_SZ') -and $Value -eq '') {
         $actual = RegGet -Key $Key -Name $Name
         if ($null -eq $actual -or $actual -ne '') {
@@ -341,13 +398,23 @@ function RegAdd([string]$Key, [string]$Name, [string]$Type, [AllowEmptyString()]
     }
 }
 function RegGet([string]$Key, [string]$Name) {
-    $q = if ($Name -eq '(default)') { RegCmd -RegArgs @('query', $Key, '/ve') -IgnoreNotFound } else { RegCmd -RegArgs @('query', $Key, '/v', $Name) -IgnoreNotFound }
-    if (-not $q) { return $null }
-    $line = $q | Where-Object { $_ -match 'REG_' -and $_ -match '^\s*(\(Default\)|\S+)\s+REG_' } | Select-Object -First 1
-    if (-not $line) { return $null }
-    $parts = ($line -split '\s{2,}') | Where-Object { $_ -ne '' }
-    if ($parts.Count -ge 3) { return [string]$parts[2] }
-    return ''
+    $keySpec = ResolveRegistryKeySpec $Key
+    $valueName = if ($Name -eq '(default)') { '' } else { $Name }
+    $registryKey = $null
+    try {
+        $registryKey = $keySpec.Root.OpenSubKey($keySpec.SubKey, $false)
+        if ($null -eq $registryKey) { return $null }
+        $valueNames = @($registryKey.GetValueNames())
+        if ($valueName -ne '' -and $valueName -notin $valueNames) { return $null }
+        if ($valueName -eq '' -and '' -notin $valueNames) { return $null }
+
+        $value = $registryKey.GetValue($valueName, $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+        if ($null -eq $value) { return $null }
+        return [string]$value
+    }
+    finally {
+        if ($null -ne $registryKey) { $registryKey.Dispose() }
+    }
 }
 
 function CleanupRegistry {
@@ -408,6 +475,10 @@ function Get-GitHubApiHeaders {
     }
     return $headers
 }
+function Get-GitHubCloneUrl([string]$Repo) {
+    if ([string]::IsNullOrWhiteSpace($Repo)) { return '' }
+    return "https://github.com/$Repo.git"
+}
 function ResolveGitHubCommit([string]$Repo, [string]$Ref) {
     if ([string]::IsNullOrWhiteSpace($Repo) -or [string]::IsNullOrWhiteSpace($Ref)) { return '' }
 
@@ -427,6 +498,17 @@ function ResolveGitHubCommit([string]$Repo, [string]$Ref) {
         }
     }
     catch {}
+
+    if (Get-Command git.exe -ErrorAction SilentlyContinue) {
+        try {
+            $remoteLine = (& git.exe ls-remote (Get-GitHubCloneUrl $Repo) "refs/heads/$Ref" 2>$null | Select-Object -First 1 | Out-String).Trim()
+            if (-not [string]::IsNullOrWhiteSpace($remoteLine)) {
+                $sha = ($remoteLine -split '\s+')[0]
+                if (-not [string]::IsNullOrWhiteSpace($sha)) { return $sha }
+            }
+        }
+        catch {}
+    }
 
     return ''
 }
@@ -500,6 +582,33 @@ function Get-GitHubRemoteInfo([string]$Repo) {
     }
     catch {}
 
+    if (Get-Command git.exe -ErrorAction SilentlyContinue) {
+        try {
+            $cloneUrl = Get-GitHubCloneUrl $Repo
+            $headInfo = (& git.exe ls-remote --symref $cloneUrl HEAD 2>$null | Out-String).Trim()
+            foreach ($line in @($headInfo -split "`r?`n")) {
+                $match = [regex]::Match($line, '^ref:\s+refs/heads/(?<branch>\S+)\s+HEAD$')
+                if ($match.Success) {
+                    $result.DefaultBranch = NormalizeGitHubRef ([string]$match.Groups['branch'].Value)
+                }
+            }
+
+            $branchInfo = (& git.exe ls-remote --heads $cloneUrl 2>$null | Out-String).Trim()
+            foreach ($line in @($branchInfo -split "`r?`n")) {
+                $match = [regex]::Match($line, 'refs/heads/(?<branch>\S+)$')
+                if ($match.Success) {
+                    $name = NormalizeGitHubRef ([string]$match.Groups['branch'].Value)
+                    if (-not [string]::IsNullOrWhiteSpace($name) -and -not $result.Branches.Contains($name)) {
+                        $result.Branches.Add($name)
+                    }
+                }
+            }
+
+            if ($result.DefaultBranch -or $result.Branches.Count -gt 0) { return [pscustomobject]$result }
+        }
+        catch {}
+    }
+
     return [pscustomobject]$result
 }
 function ResolveGitHubRefAuto {
@@ -559,13 +668,11 @@ function ResolveSourceRoot {
     if ([string]::IsNullOrWhiteSpace($GitHubRef)) { EnsureGitHubRefResolved }
     if ([string]::IsNullOrWhiteSpace($GitHubRef)) { throw 'GitHubRef could not be resolved for GitHub package source.' }
     $script:ResolvedPackageSource = 'GitHub'
-    $fallbackRoots = @()
-    if (TestPkgRoot $SourcePath) { $fallbackRoots += $SourcePath }
-    if ((Test-Path -LiteralPath $InstallPath) -and (TestPkgRoot $InstallPath)) { $fallbackRoots += $InstallPath }
     $url = if ([string]::IsNullOrWhiteSpace($GitHubZipUrl)) { "https://codeload.github.com/$GitHubRepo/zip/refs/heads/$GitHubRef" } else { $GitHubZipUrl.Trim() }
     $tmp = Join-Path $env:TEMP ("$($script:ToolName)_pkg_" + [guid]::NewGuid().ToString('N'))
     $zip = Join-Path $tmp 'pkg.zip'
     $ext = Join-Path $tmp 'extract'
+    $cloneRoot = Join-Path $tmp 'git'
     EnsureDir $tmp; EnsureDir $ext
     $script:TempPackageRoots.Add($tmp) | Out-Null
     Log "Downloading package: $url"
@@ -599,11 +706,24 @@ function ResolveSourceRoot {
             catch {}
         }
         if (-not $downloaded) {
-            if ($fallbackRoots.Count -gt 0) {
-                Log "GitHub fetch failed. Falling back to local package source: $($fallbackRoots[0])" 'WARN'
-                $script:ResolvedPackageSource = 'Local'
-                Set-LocalSourceGitMetadata -Root $fallbackRoots[0]
-                return $fallbackRoots[0]
+            if (Get-Command git.exe -ErrorAction SilentlyContinue) {
+                try {
+                    Log 'GitHub archive fetch failed; trying git clone fallback with local git credentials...'
+                    & git.exe clone --quiet --depth 1 --branch $GitHubRef (Get-GitHubCloneUrl $GitHubRepo) $cloneRoot 2>$null
+                    if ($LASTEXITCODE -eq 0) {
+                        $candidateRoots = @($cloneRoot) + @(Get-ChildItem -LiteralPath $cloneRoot -Directory -Recurse -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+                        foreach ($candidateRoot in $candidateRoots) {
+                            if (TestPkgRoot $candidateRoot) {
+                                $commit = (& git.exe -C $cloneRoot rev-parse HEAD 2>$null | Out-String).Trim()
+                                if (-not [string]::IsNullOrWhiteSpace($commit)) { $script:ResolvedGitHubCommit = $commit }
+                                $script:ResolvedSourceGitBranch = $GitHubRef
+                                $script:ResolvedSourceDirty = $false
+                                return $candidateRoot
+                            }
+                        }
+                    }
+                }
+                catch {}
             }
             throw
         }
@@ -612,22 +732,10 @@ function ResolveSourceRoot {
         Expand-Archive -Path $zip -DestinationPath $ext -Force
     }
     catch {
-        if ($fallbackRoots.Count -gt 0) {
-            Log "GitHub extract failed. Falling back to local package source: $($fallbackRoots[0])" 'WARN'
-            $script:ResolvedPackageSource = 'Local'
-            Set-LocalSourceGitMetadata -Root $fallbackRoots[0]
-            return $fallbackRoots[0]
-        }
         throw
     }
     $roots = @(Get-ChildItem -LiteralPath $ext -Directory -Recurse -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
     foreach ($r in $roots) { if (TestPkgRoot $r) { return $r } }
-    if ($fallbackRoots.Count -gt 0) {
-        Log "Downloaded package missing required files. Falling back to local package source: $($fallbackRoots[0])" 'WARN'
-        $script:ResolvedPackageSource = 'Local'
-        Set-LocalSourceGitMetadata -Root $fallbackRoots[0]
-        return $fallbackRoots[0]
-    }
     throw 'Downloaded package does not contain required files.'
 }
 

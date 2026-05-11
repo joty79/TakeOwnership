@@ -1,5 +1,15 @@
 # CHANGELOG - TakeOwnership
 
+## 2026-05-11
+
+- Bumped `app-metadata.json` to `1.0.1` for the user-facing commit-aware `Update app` behavior change.
+- Έγινε commit-aware το plain-`pwsh` `Update app` status: local/latest version, local/latest commit, source kind και dirty state.
+- Hardened update-status caching so stale `UpToDate` results are not reused when a fresh remote check fails.
+- Changed git working-copy updates to use `git fetch` + fast-forward only and refuse dirty workspaces.
+- Kept installed-copy updates on the recorded InstallerCore source, defaulting to `UpdateGitHub` for GitHub installs, while comparing `state\install-meta.json` `github_commit` against the latest remote commit.
+- Kept non-git portable-copy updates on `DownloadLatest -NoSelfRelaunch` with visible progress, recent output, relaunch, and old-host exit.
+- Regenerated `Install.ps1` from the current `InstallerCore` profile/template.
+
 ## 2026-04-24
 
 - Added `app-metadata.json` so `TakeOwnership` has a canonical app version/repo contract.

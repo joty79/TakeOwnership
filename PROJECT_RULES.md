@@ -108,3 +108,11 @@
 - Guardrail/rule: `TakeOwnership` must keep a plain-`pwsh` host because of the RunAsTI launch chain, but its in-app updater should still follow the `WinAppManager` behavior pattern for process visibility and relaunch. When adapting a template, copy the behavior contract, not only the command-line flags.
 - Files affected: `Manage_Ownership.ps1`, `CHANGELOG.md`, `PROJECT_RULES.md`.
 - Validation/tests run: Parser validation passed for `Manage_Ownership.ps1`; static review confirmed redirected updater process, recent log panel, `Start-UpdatedAppHost`, and old-host exit path; local installer update redeployed the fixed script.
+
+### Entry - 2026-05-11 (Commit-aware plain-pwsh Update App)
+- Date: 2026-05-11
+- Problem: `TakeOwnership` still used an older version-first update status path that could miss same-version remote commits, reuse stale `UpToDate` cache after a failed fresh check, and treat git working copies like archive-download updates.
+- Root cause: The previous plain-`pwsh` adapter predated the current `InstallerCore` commit-aware update UI contract that was recently applied to `SystemCleanup`.
+- Guardrail/rule: `TakeOwnership` remains plain-`pwsh`, but `Update app` must track local/latest version, local/latest commit, source kind, dirty state, and recent output. Installed copies compare `state\install-meta.json` `github_commit` to the latest remote commit. Git working copies update only through `git fetch` + fast-forward and refuse dirty workspaces. Non-git portable copies may use `DownloadLatest -NoSelfRelaunch`.
+- Files affected: `Manage_Ownership.ps1`, `Install.ps1`, `app-metadata.json`, `README.md`, `CHANGELOG.md`, `PROJECT_RULES.md`.
+- Validation/tests run: Parser validation for `Manage_Ownership.ps1` and regenerated `Install.ps1`; `app-metadata.json` JSON parse; local-source installer update smoke; installed file hash/readback for `Manage_Ownership.ps1`, `Install.ps1`, and `app-metadata.json`; git dirty-workspace refusal probe.

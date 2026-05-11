@@ -115,7 +115,7 @@ This tool intentionally does **not** bootstrap into Windows Terminal. The RunAsT
 
 ```
 OWNERSHIP MANAGER
-  Update: Up to date / Update available
+  Update: Up to date / Update available / Local changes present
 
 [1] Take Ownership
 [2] Restore Original
@@ -123,7 +123,9 @@ OWNERSHIP MANAGER
 [4] Exit
 ```
 
-The update action reuses the generated `Install.ps1` instead of duplicating install logic in the ownership script. During update, the app keeps the current session visible, shows recent installer output, relaunches the refreshed `Manage_Ownership.ps1` in `pwsh`, and closes the old host.
+Το update panel δείχνει local/latest version, local/latest commit, source kind, dirty state, status, branch και recent installer output. Installed copies συγκρίνουν το `state\install-meta.json` `github_commit` με το latest remote commit, ώστε same-version hotfixes να εμφανίζονται ως update.
+
+The update action reuses the generated `Install.ps1` instead of duplicating install logic in the ownership script. Git working copies update only with `git fetch` + fast-forward and refuse dirty workspaces; installed copies use the recorded InstallerCore source, defaulting to `UpdateGitHub` for GitHub installs; non-git portable copies use `DownloadLatest -NoSelfRelaunch`. During update, the app keeps the current session visible, shows recent installer output, relaunches the refreshed `Manage_Ownership.ps1` in `pwsh`, and closes the old host.
 
 ---
 
