@@ -1,7 +1,7 @@
 #requires -version 7.0
 [CmdletBinding()]
 param(
-    [ValidateSet('Install', 'Update', 'Uninstall', 'InstallGitHub', 'UpdateGitHub', 'OpenInstallDirectory', 'OpenInstallLogs', 'DownloadLatest')]
+    [ValidateSet('Install', 'Update', 'Uninstall', 'InstallGitHub', 'UpdateGitHub', 'OpenInstallDirectory', 'OpenInstallLogs', 'DownloadLatest', 'RegistryRepair')]
     [string]$Action = 'Install',
     [string]$InstallPath = '',
     [string]$SourcePath = $PSScriptRoot,
@@ -79,119 +79,135 @@ $script:ProfileJson = @'
     "HKLM\\SOFTWARE\\Classes\\*\\shell\\ManageOwnership",
     "HKLM\\SOFTWARE\\Classes\\Directory\\shell\\ManageOwnership",
     "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\TakeOwnership",
+    "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
     "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\TakeOwnership",
+    "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
     "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership",
+    "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
     "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership",
+    "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
     "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\ManageOwnership",
+    "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Explorer\\shell\\ManageOwnership",
     "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\ManageOwnership",
+    "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Explorer\\shell\\ManageOwnership",
     "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\ManageOwnership",
+    "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Explorer\\shell\\ManageOwnership",
     "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\ManageOwnership",
+    "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Explorer\\shell\\ManageOwnership",
     "HKCR\\*\\shell\\Z_ManageOwnership",
     "HKCR\\Directory\\shell\\Z_ManageOwnership",
     "HKCR\\*\\shell\\ManageOwnership",
     "HKCR\\Directory\\shell\\ManageOwnership",
     "HKCR\\*\\shell\\SystemTools\\shell\\TakeOwnership",
+    "HKCR\\*\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
     "HKCR\\Directory\\shell\\SystemTools\\shell\\TakeOwnership",
+    "HKCR\\Directory\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
     "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership",
+    "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
     "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership",
+    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
     "HKCR\\*\\shell\\SystemTools\\shell\\ManageOwnership",
+    "HKCR\\*\\shell\\SystemTools\\shell\\Explorer\\shell\\ManageOwnership",
     "HKCR\\Directory\\shell\\SystemTools\\shell\\ManageOwnership",
+    "HKCR\\Directory\\shell\\SystemTools\\shell\\Explorer\\shell\\ManageOwnership",
     "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\ManageOwnership",
-    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\ManageOwnership"
+    "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\Explorer\\shell\\ManageOwnership",
+    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\ManageOwnership",
+    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\Explorer\\shell\\ManageOwnership"
   ],
   "registry_values": [
     {
-      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
       "name": "MUIVerb",
       "type": "REG_SZ",
-      "value": "Manage Ownership 🛡️"
+      "value": "Take Ownership"
     },
     {
-      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
       "name": "Icon",
       "type": "REG_SZ",
       "value": "imageres.dll,-5324"
     },
     {
-      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
       "name": "NoWorkingDirectory",
       "type": "REG_SZ",
       "value": ""
     },
     {
-      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "type": "REG_SZ",
       "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%1\""
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
       "name": "MUIVerb",
       "type": "REG_SZ",
-      "value": "Manage Ownership 🛡️"
+      "value": "Take Ownership"
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
       "name": "Icon",
       "type": "REG_SZ",
       "value": "imageres.dll,-5324"
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
       "name": "NoWorkingDirectory",
       "type": "REG_SZ",
       "value": ""
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "type": "REG_SZ",
       "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%1\""
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
       "name": "MUIVerb",
       "type": "REG_SZ",
-      "value": "Manage Ownership 🛡️"
+      "value": "Take Ownership"
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
       "name": "Icon",
       "type": "REG_SZ",
       "value": "imageres.dll,-5324"
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
       "name": "NoWorkingDirectory",
       "type": "REG_SZ",
       "value": ""
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "type": "REG_SZ",
       "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
     },
     {
-      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
       "name": "MUIVerb",
       "type": "REG_SZ",
-      "value": "Manage Ownership 🛡️"
+      "value": "Take Ownership"
     },
     {
-      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
       "name": "Icon",
       "type": "REG_SZ",
       "value": "imageres.dll,-5324"
     },
     {
-      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
       "name": "NoWorkingDirectory",
       "type": "REG_SZ",
       "value": ""
     },
     {
-      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "type": "REG_SZ",
       "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
@@ -199,22 +215,22 @@ $script:ProfileJson = @'
   ],
   "registry_verify": [
     {
-      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "expected": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%1\""
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "expected": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%1\""
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "expected": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
     },
     {
-      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "expected": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
     }
@@ -283,6 +299,9 @@ $script:ResolvedSourceDirty = $false
 $script:TempPackageRoots = [System.Collections.Generic.List[string]]::new()
 $script:HasCliArgs = $MyInvocation.BoundParameters.Count -gt 0
 $script:IsWindowsTerminalSession = -not [string]::IsNullOrWhiteSpace($env:WT_SESSION)
+$script:RegistryCleanupNeedsElevation = $false
+$script:RegistryCleanupIssues = [System.Collections.Generic.List[string]]::new()
+$script:ElevatedRegistryRepairSucceeded = $false
 
 if ([string]::IsNullOrWhiteSpace($InstallPath)) { $InstallPath = Join-Path $env:LOCALAPPDATA ([string](Get-P 'install_folder_name' "$($script:ToolName)Context")) }
 if ([string]::IsNullOrWhiteSpace($GitHubRepo)) { $GitHubRepo = [string](Get-P 'github_repo' '') }
@@ -319,6 +338,37 @@ function Confirm([string]$Prompt) {
     return ($response.Trim().ToLowerInvariant() -eq 'y')
 }
 
+function Complete-InstallerRun([int]$ExitCode) {
+    if ($ExitCode -ne 0 -and -not $script:HasCliArgs) {
+        Write-Host ''
+        Write-Host ("Installer failed with exit code {0}." -f $ExitCode) -ForegroundColor Red
+        Write-Host ("Log: {0}" -f $script:InstallerLogPath) -ForegroundColor Yellow
+        Write-Host 'Press Enter to close this window...' -ForegroundColor Gray
+        try { [void](Read-Host) } catch {}
+    }
+    exit $ExitCode
+}
+
+function Test-IsElevated {
+    if (-not $IsWindows) { return $false }
+    try {
+        $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+        $principal = [Security.Principal.WindowsPrincipal]::new($identity)
+        return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    }
+    catch {
+        return $false
+    }
+}
+
+function Resolve-PwshPath {
+    $pwshCmd = Get-Command pwsh.exe -ErrorAction SilentlyContinue
+    if ($null -ne $pwshCmd) { return $pwshCmd.Source }
+    $fallback = Join-Path $PSHOME 'pwsh.exe'
+    if (Test-Path -LiteralPath $fallback -PathType Leaf) { return $fallback }
+    throw 'pwsh.exe was not found for elevated relaunch.'
+}
+
 function RegCmd([AllowEmptyString()][string[]]$RegArgs, [switch]$IgnoreNotFound) {
     $out = & reg.exe @RegArgs 2>&1
     if ($LASTEXITCODE -eq 0) { return $out }
@@ -327,6 +377,23 @@ function RegCmd([AllowEmptyString()][string[]]$RegArgs, [switch]$IgnoreNotFound)
     throw "reg.exe failed: reg $($RegArgs -join ' ')`n$text"
 }
 function RegDel([string]$Key) { RegCmd -RegArgs @('delete', $Key, '/f') -IgnoreNotFound | Out-Null }
+
+function Test-RegistryKeyExists([string]$Key) {
+    try {
+        $keySpec = ResolveRegistryKeySpec $Key
+        $registryKey = $null
+        try {
+            $registryKey = $keySpec.Root.OpenSubKey($keySpec.SubKey, $false)
+            return ($null -ne $registryKey)
+        }
+        finally {
+            if ($null -ne $registryKey) { $registryKey.Dispose() }
+        }
+    }
+    catch {
+        return $false
+    }
+}
 function ResolveRegistryKeySpec([string]$Key) {
     if ([string]::IsNullOrWhiteSpace($Key)) { throw 'Registry key is empty.' }
 
@@ -424,7 +491,12 @@ function CleanupRegistry {
         }
         catch {
             $errText = [string]$_.Exception.Message
-            if ($k -like 'HKCR\*' -and $errText -match 'Access is denied') { continue }
+            if ($k -like 'HKCR\*' -and $errText -match 'Access is denied') {
+                $script:RegistryCleanupNeedsElevation = $true
+                $script:RegistryCleanupIssues.Add($k) | Out-Null
+                Log "Protected registry cleanup needs elevation: $k"
+                continue
+            }
             Log "Failed to remove key: $k" 'WARN'
         }
     }
@@ -448,6 +520,65 @@ function VerifyRegistry([string]$InstallRoot) {
         if ($a -ne $e) { $ok = $false; Log "Registry mismatch: $k [$n] expected='$e' actual='$a'" 'WARN' }
     }
     return $ok
+}
+
+function New-EncodedPowerShellCommand {
+    param(
+        [Parameter(Mandatory)]
+        [string]$ScriptPath,
+
+        [Parameter(Mandatory)]
+        [string]$RepairInstallPath
+    )
+
+    $sqScript = $ScriptPath.Replace("'", "''")
+    $sqInstall = $RepairInstallPath.Replace("'", "''")
+    $sqSource = $SourcePath.Replace("'", "''")
+    $sqRepo = $GitHubRepo.Replace("'", "''")
+    $sqRef = $GitHubRef.Replace("'", "''")
+    $command = @"
+& '$sqScript' -Action RegistryRepair -InstallPath '$sqInstall' -SourcePath '$sqSource' -PackageSource Local -GitHubRepo '$sqRepo' -GitHubRef '$sqRef' -Force
+exit `$LASTEXITCODE
+"@
+    return [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command))
+}
+
+function Invoke-ElevatedRegistryRepairIfNeeded([string]$InstallRoot) {
+    if (-not $script:RegistryCleanupNeedsElevation) { return $true }
+    if (Test-IsElevated) { return $true }
+
+    $issueCount = $script:RegistryCleanupIssues.Count
+    $prompt = "Protected legacy context-menu cleanup needs Administrator rights ($issueCount key(s)). Relaunch elevated to finish cleanup?"
+    if (-not (Confirm $prompt)) {
+        Log 'Protected legacy context-menu cleanup was skipped because elevated relaunch was declined.' 'WARN'
+        return $false
+    }
+
+    try {
+        $pwshExe = Resolve-PwshPath
+        $encoded = New-EncodedPowerShellCommand -ScriptPath $PSCommandPath -RepairInstallPath $InstallRoot
+        Log 'Relaunching installer elevated for registry cleanup.'
+        $process = Start-Process -FilePath $pwshExe -ArgumentList @(
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-EncodedCommand', $encoded
+        ) -Verb RunAs -Wait -PassThru
+
+        if ($process.ExitCode -eq 0) {
+            $script:ElevatedRegistryRepairSucceeded = $true
+            $script:RegistryCleanupNeedsElevation = $false
+            $script:RegistryCleanupIssues.Clear()
+            Log 'Elevated registry cleanup completed successfully.'
+            return $true
+        }
+
+        Log "Elevated registry cleanup exited with code $($process.ExitCode)." 'WARN'
+        return $false
+    }
+    catch {
+        Log "Elevated registry cleanup failed to start or complete: $($_.Exception.Message)" 'WARN'
+        return $false
+    }
 }
 
 function SetUninstall([string]$InstallRoot) {
@@ -619,7 +750,7 @@ function ResolveGitHubRefAuto {
 
     $info = Get-GitHubRemoteInfo -Repo $GitHubRepo
     $preferred = [System.Collections.Generic.List[string]]::new()
-    foreach ($candidate in @($info.DefaultBranch, 'master', [string](Get-P 'github_ref' ''), 'latest')) {
+    foreach ($candidate in @([string](Get-P 'github_ref' ''), $info.DefaultBranch, 'main', 'master', 'latest')) {
         $name = NormalizeGitHubRef $candidate
         if (-not [string]::IsNullOrWhiteSpace($name) -and -not $preferred.Contains($name)) {
             $preferred.Add($name)
@@ -905,10 +1036,38 @@ function RunInstallOrUpdate([ValidateSet('Install', 'Update')] [string]$Mode) {
     $regOk = VerifyRegistry -InstallRoot $InstallPath
     SetUninstall -InstallRoot $InstallPath
     SaveMeta -InstallRoot $InstallPath -Mode $Mode
-    RestartExplorer
-    if ($script:Warnings.Count -gt 0 -or -not $coreOk -or -not $regOk) { Write-Host "$Mode completed with warnings." -ForegroundColor Yellow; return 2 }
+    $cleanupOk = Invoke-ElevatedRegistryRepairIfNeeded -InstallRoot $InstallPath
+    if (-not $script:ElevatedRegistryRepairSucceeded) { RestartExplorer }
+    if ($script:Warnings.Count -gt 0 -or -not $coreOk -or -not $regOk -or -not $cleanupOk) { Write-Host "$Mode completed with warnings." -ForegroundColor Yellow; return 2 }
     Write-Host "$Mode completed successfully." -ForegroundColor Green
     return 0
+}
+
+function RunRegistryRepair {
+    Log "Starting elevated registry repair for $InstallPath"
+    if (-not (Get-Command reg.exe -ErrorAction SilentlyContinue)) {
+        Log 'Missing required command: reg.exe' 'ERROR'
+        return 1
+    }
+
+    try {
+        WriteRegistry -InstallRoot $InstallPath
+        $regOk = VerifyRegistry -InstallRoot $InstallPath
+        if ($script:RegistryCleanupNeedsElevation -and (Test-IsElevated)) {
+            Log 'Some protected registry cleanup keys still could not be removed even after elevation.' 'WARN'
+        }
+        RestartExplorer
+        if ($script:Warnings.Count -gt 0 -or -not $regOk) {
+            Write-Host 'Registry repair completed with warnings.' -ForegroundColor Yellow
+            return 2
+        }
+        Write-Host 'Registry repair completed successfully.' -ForegroundColor Green
+        return 0
+    }
+    catch {
+        Log "Registry repair failed: $($_.Exception.Message)" 'ERROR'
+        return 1
+    }
 }
 
 function RunUninstall {
@@ -1172,11 +1331,12 @@ function PreparePackageSource([ValidateSet('Install', 'Update')] [string]$Mode) 
 
 if (-not $script:HasCliArgs) { $menuAction = ShowMenu; if ($menuAction -eq 'Exit') { exit 0 }; $Action = $menuAction }
 switch ($Action) {
-    'Install' { PreparePackageSource -Mode 'Install'; if (-not (Confirm "Install $($script:DisplayName) to '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunInstallOrUpdate -Mode 'Install') }
-    'InstallGitHub' { $PackageSource = 'GitHub'; EnsureGitHubRefResolved; Write-Host ("Using GitHub ref: {0}" -f $GitHubRef) -ForegroundColor DarkCyan; if (-not (Confirm "Install $($script:DisplayName) to '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunInstallOrUpdate -Mode 'Install') }
-    'Update' { PreparePackageSource -Mode 'Update'; if (-not (Confirm "Update existing $($script:DisplayName) at '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunInstallOrUpdate -Mode 'Update') }
-    'UpdateGitHub' { $PackageSource = 'GitHub'; EnsureGitHubRefResolved; Write-Host ("Using GitHub ref: {0}" -f $GitHubRef) -ForegroundColor DarkCyan; if (-not (Confirm "Update existing $($script:DisplayName) at '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunInstallOrUpdate -Mode 'Update') }
-    'Uninstall' { if (-not (Confirm "Uninstall $($script:DisplayName) from '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; exit (RunUninstall) }
+    'Install' { PreparePackageSource -Mode 'Install'; if (-not (Confirm "Install $($script:DisplayName) to '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; Complete-InstallerRun (RunInstallOrUpdate -Mode 'Install') }
+    'InstallGitHub' { $PackageSource = 'GitHub'; EnsureGitHubRefResolved; Write-Host ("Using GitHub ref: {0}" -f $GitHubRef) -ForegroundColor DarkCyan; if (-not (Confirm "Install $($script:DisplayName) to '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; Complete-InstallerRun (RunInstallOrUpdate -Mode 'Install') }
+    'Update' { PreparePackageSource -Mode 'Update'; if (-not (Confirm "Update existing $($script:DisplayName) at '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; Complete-InstallerRun (RunInstallOrUpdate -Mode 'Update') }
+    'UpdateGitHub' { $PackageSource = 'GitHub'; EnsureGitHubRefResolved; Write-Host ("Using GitHub ref: {0}" -f $GitHubRef) -ForegroundColor DarkCyan; if (-not (Confirm "Update existing $($script:DisplayName) at '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; Complete-InstallerRun (RunInstallOrUpdate -Mode 'Update') }
+    'Uninstall' { if (-not (Confirm "Uninstall $($script:DisplayName) from '$InstallPath'?")) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }; Complete-InstallerRun (RunUninstall) }
+    'RegistryRepair' { Complete-InstallerRun (RunRegistryRepair) }
     'DownloadLatest' {
         $downloadPrompt = if ($NoSelfRelaunch) {
             "Download latest $($script:DisplayName) into '$PSScriptRoot'?"
@@ -1185,7 +1345,7 @@ switch ($Action) {
             "Download latest $($script:DisplayName) into '$PSScriptRoot' and relaunch the updated installer?"
         }
         if (-not (Confirm $downloadPrompt)) { Write-Host 'Cancelled.' -ForegroundColor Yellow; exit 0 }
-        exit (RunDownloadLatest)
+        Complete-InstallerRun (RunDownloadLatest)
     }
     'OpenInstallDirectory' { if (-not (Test-Path -LiteralPath $InstallPath)) { Write-Host ("Install directory not found: {0}" -f $InstallPath) -ForegroundColor Yellow; exit 1 }; Start-Process explorer.exe -ArgumentList $InstallPath; exit 0 }
     'OpenInstallLogs' { $logFile = Join-Path $InstallPath 'logs\\installer.log'; $logDir = Split-Path -Path $logFile -Parent; EnsureDir $logDir; if (Test-Path -LiteralPath $logFile) { Start-Process notepad.exe -ArgumentList $logFile } else { Start-Process explorer.exe -ArgumentList $logDir }; exit 0 }
