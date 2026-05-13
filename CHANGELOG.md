@@ -2,6 +2,8 @@
 
 ## 2026-05-14
 
+- Bumped `app-metadata.json` to `1.0.3` and moved the shared child verb to `System Tools > Windows > Take Ownership`.
+- Regenerated `Install.ps1` from `InstallerCore` with cleanup for the incorrect `WindowsUtilities` migration path.
 - Bumped `app-metadata.json` to `1.0.2` for the shared `System Tools > Windows Utilities` layout move.
 - Regenerated `Install.ps1` from `InstallerCore` so the context-menu child verb installs under `SystemTools\shell\WindowsUtilities\shell\TakeOwnership`.
 

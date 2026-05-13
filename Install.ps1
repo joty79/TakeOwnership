@@ -77,41 +77,41 @@ $script:ProfileJson = @'
     "HKLM\\SOFTWARE\\Classes\\*\\shell\\ManageOwnership",
     "HKLM\\SOFTWARE\\Classes\\Directory\\shell\\ManageOwnership",
     "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\TakeOwnership",
-    "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
     "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\TakeOwnership",
-    "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
     "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership",
-    "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
     "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership",
-    "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
     "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\ManageOwnership",
-    "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Windows\\shell\\ManageOwnership",
     "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\ManageOwnership",
-    "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Windows\\shell\\ManageOwnership",
     "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\ManageOwnership",
-    "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\ManageOwnership",
     "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\ManageOwnership",
-    "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\ManageOwnership",
     "HKCR\\*\\shell\\Z_ManageOwnership",
     "HKCR\\Directory\\shell\\Z_ManageOwnership",
     "HKCR\\*\\shell\\ManageOwnership",
     "HKCR\\Directory\\shell\\ManageOwnership",
     "HKCR\\*\\shell\\SystemTools\\shell\\TakeOwnership",
-    "HKCR\\*\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCR\\*\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
     "HKCR\\Directory\\shell\\SystemTools\\shell\\TakeOwnership",
-    "HKCR\\Directory\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCR\\Directory\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
     "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\TakeOwnership",
-    "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
     "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\TakeOwnership",
-    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
     "HKCR\\*\\shell\\SystemTools\\shell\\ManageOwnership",
-    "HKCR\\*\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCR\\*\\shell\\SystemTools\\shell\\Windows\\shell\\ManageOwnership",
     "HKCR\\Directory\\shell\\SystemTools\\shell\\ManageOwnership",
-    "HKCR\\Directory\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCR\\Directory\\shell\\SystemTools\\shell\\Windows\\shell\\ManageOwnership",
     "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\ManageOwnership",
-    "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\ManageOwnership",
     "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\ManageOwnership",
-    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\ManageOwnership",
     "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
     "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
     "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Explorer\\shell\\TakeOwnership",
@@ -127,101 +127,117 @@ $script:ProfileJson = @'
     "HKCR\\*\\shell\\SystemTools\\shell\\Explorer\\shell\\ManageOwnership",
     "HKCR\\Directory\\shell\\SystemTools\\shell\\Explorer\\shell\\ManageOwnership",
     "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\Explorer\\shell\\ManageOwnership",
-    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\Explorer\\shell\\ManageOwnership"
+    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\Explorer\\shell\\ManageOwnership",
+    "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCR\\*\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCR\\Directory\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+    "HKCR\\*\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCR\\Directory\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership"
   ],
   "registry_values": [
     {
-      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "MUIVerb",
       "type": "REG_SZ",
       "value": "Take Ownership"
     },
     {
-      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "Icon",
       "type": "REG_SZ",
       "value": "imageres.dll,-5324"
     },
     {
-      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "NoWorkingDirectory",
       "type": "REG_SZ",
       "value": ""
     },
     {
-      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "type": "REG_SZ",
       "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%1\""
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "MUIVerb",
       "type": "REG_SZ",
       "value": "Take Ownership"
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "Icon",
       "type": "REG_SZ",
       "value": "imageres.dll,-5324"
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "NoWorkingDirectory",
       "type": "REG_SZ",
       "value": ""
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "type": "REG_SZ",
       "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%1\""
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "MUIVerb",
       "type": "REG_SZ",
       "value": "Take Ownership"
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "Icon",
       "type": "REG_SZ",
       "value": "imageres.dll,-5324"
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "NoWorkingDirectory",
       "type": "REG_SZ",
       "value": ""
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "type": "REG_SZ",
       "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
     },
     {
-      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "MUIVerb",
       "type": "REG_SZ",
       "value": "Take Ownership"
     },
     {
-      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "Icon",
       "type": "REG_SZ",
       "value": "imageres.dll,-5324"
     },
     {
-      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership",
+      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "NoWorkingDirectory",
       "type": "REG_SZ",
       "value": ""
     },
     {
-      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "type": "REG_SZ",
       "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
@@ -229,22 +245,22 @@ $script:ProfileJson = @'
   ],
   "registry_verify": [
     {
-      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "expected": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%1\""
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "expected": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%1\""
     },
     {
-      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "expected": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
     },
     {
-      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\WindowsUtilities\\shell\\TakeOwnership\\command",
+      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "expected": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
     }
