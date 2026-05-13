@@ -116,3 +116,12 @@
 - Guardrail/rule: `TakeOwnership` remains plain-`pwsh`, but `Update app` must track local/latest version, local/latest commit, source kind, dirty state, and recent output. Installed copies compare `state\install-meta.json` `github_commit` to the latest remote commit. Git working copies update only through `git fetch` + fast-forward and refuse dirty workspaces. Non-git portable copies may use `DownloadLatest -NoSelfRelaunch`.
 - Files affected: `Manage_Ownership.ps1`, `Install.ps1`, `app-metadata.json`, `README.md`, `CHANGELOG.md`, `PROJECT_RULES.md`.
 - Validation/tests run: Parser validation for `Manage_Ownership.ps1` and regenerated `Install.ps1`; `app-metadata.json` JSON parse; local-source installer update smoke; installed file hash/readback for `Manage_Ownership.ps1`, `Install.ps1`, and `app-metadata.json`; git dirty-workspace refusal probe.
+
+### Entry - 2026-05-14 (Windows Utilities category move)
+
+- Date: 2026-05-14
+- Problem: `Take Ownership` was still grouped under the shared `Explorer` category, which made the menu label too narrow for general file utilities.
+- Root cause: The shared SystemTools category name was chosen before the menu grew to include ownership and lock-inspection tools.
+- Guardrail/rule: `TakeOwnership` remains child-only, but its generated installer now targets `SystemTools\shell\WindowsUtilities\shell\TakeOwnership`. Keep old `Explorer` child paths in cleanup so migrated installs do not leave duplicate entries.
+- Files affected: `Install.ps1`, `app-metadata.json`, `CHANGELOG.md`, `PROJECT_RULES.md`, `D:\Users\joty79\scripts\InstallerCore\profiles\TakeOwnership.json`.
+- Validation/tests run: Regenerated `Install.ps1` from `InstallerCore`; parser validation passed for generated installer.

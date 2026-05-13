@@ -77,7 +77,7 @@ The ACL backup uses **SDDL format** (Security Descriptor Definition Language) �
 
 ### Usage
 
-**From context menu** — *Right-click any file or folder → System Tools → Manage Ownership 🛡️*
+**From context menu** — *Right-click any file or folder → System Tools → Windows Utilities → Take Ownership*
 
 **From terminal:**
 
@@ -242,9 +242,9 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\Install.ps1 -Action Uninstall -F
 - Copies runtime files to `%LOCALAPPDATA%\TakeOwnershipContext\`
 - Deploys `app-metadata.json` for version/update status
 - Bundles `assets\RunAsTI\RunAsTI.ps1` alongside the main script
-- Registers context menu entries under the shared **System Tools** submenu:
-  - `*\shell\SystemTools\shell\TakeOwnership` — files
-  - `Directory\shell\SystemTools\shell\TakeOwnership` — folders
+- Registers context menu entries under **System Tools → Windows Utilities**:
+  - `*\shell\SystemTools\shell\WindowsUtilities\shell\TakeOwnership` — files
+  - `Directory\shell\SystemTools\shell\WindowsUtilities\shell\TakeOwnership` — folders
   - `Directory\Background\shell\...` + `DesktopBackground\Shell\...` — backgrounds
 - Cleans up legacy `Z_ManageOwnership` and `ManageOwnership` keys from previous versions
 - Adds uninstall entry to Programs & Features
