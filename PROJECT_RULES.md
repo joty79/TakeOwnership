@@ -143,3 +143,12 @@
 - Guardrail/rule: `TakeOwnership` must register on file/folder/folder-background targets only. Do not write a desktop-background `SystemTools > Windows` entry; keep cleanup for the old desktop-background key.
 - Files affected: `Install.ps1`, `D:\Users\joty79\scripts\InstallerCore\profiles\TakeOwnership.json`, `PROJECT_RULES.md`.
 - Validation/tests run: Parser validation passed; local-source update completed; HKCU registry readback confirmed desktop-background `TakeOwnership` key is absent.
+
+### Entry - 2026-05-14 (No folder-background desktop-visible ownership entry)
+
+- Date: 2026-05-14
+- Problem: `Take Ownership` still appeared on the visible desktop right-click `System Tools > Windows` menu after the `DesktopBackground` branch was removed.
+- Root cause: The visible desktop right-click menu on this host is backed by `Directory\Background`, and the profile still registered `HKCU\Software\Classes\Directory\Background\shell\SystemTools\shell\Windows\shell\TakeOwnership`.
+- Guardrail/rule: `TakeOwnership` must not write either `DesktopBackground` or `Directory\Background` entries under `SystemTools > Windows`; keep it on file and folder targets only, with cleanup for old background keys.
+- Files affected: `Install.ps1`, `app-metadata.json`, `CHANGELOG.md`, `PROJECT_RULES.md`, `D:\Users\joty79\scripts\InstallerCore\profiles\TakeOwnership.json`.
+- Validation/tests run: Parser validation passed; local-source update completed; HKCU registry readback confirmed `Directory\Background\shell\SystemTools\shell\Windows\shell\TakeOwnership` is absent.
