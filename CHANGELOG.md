@@ -2,6 +2,7 @@
 
 ## 2026-05-14
 
+- Bumped `app-metadata.json` to `1.0.4` and removed the desktop-background `System Tools > Windows > Take Ownership` entry so `InstallAll` no longer pushes the shared desktop menu over the Windows 10 static-menu item limit; file/folder targets remain registered.
 - Bumped `app-metadata.json` to `1.0.3` and moved the shared child verb to `System Tools > Windows > Take Ownership`.
 - Regenerated `Install.ps1` from `InstallerCore` with cleanup for the incorrect `WindowsUtilities` migration path.
 - Bumped `app-metadata.json` to `1.0.2` for the shared `System Tools > Windows Utilities` layout move.

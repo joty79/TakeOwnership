@@ -134,3 +134,12 @@
 - Guardrail/rule: `TakeOwnership` remains child-only under `SystemTools\shell\Windows\shell\TakeOwnership`. Keep cleanup for old flat, `Explorer`, and mistaken `WindowsUtilities` child paths during migration.
 - Files affected: `Install.ps1`, `app-metadata.json`, `README.md`, `CHANGELOG.md`, `PROJECT_RULES.md`, `D:\Users\joty79\scripts\InstallerCore\profiles\TakeOwnership.json`.
 - Validation/tests run: Pending parser validation, local-source install, and HKCU registry readback after regeneration.
+
+### Entry - 2026-05-14 (No desktop-background ownership entry)
+
+- Date: 2026-05-14
+- Problem: `Take Ownership` reappeared on desktop background after `SystemToolsManager.ps1 -Action InstallAll`, pushing `System Tools > Windows` toward Explorer's static-menu item limit.
+- Root cause: The generated installer profile still registered `HKCU\Software\Classes\DesktopBackground\Shell\SystemTools\shell\Windows\shell\TakeOwnership` even though desktop background has no selected target item.
+- Guardrail/rule: `TakeOwnership` must register on file/folder/folder-background targets only. Do not write a desktop-background `SystemTools > Windows` entry; keep cleanup for the old desktop-background key.
+- Files affected: `Install.ps1`, `D:\Users\joty79\scripts\InstallerCore\profiles\TakeOwnership.json`, `PROJECT_RULES.md`.
+- Validation/tests run: Parser validation passed; local-source update completed; HKCU registry readback confirmed desktop-background `TakeOwnership` key is absent.

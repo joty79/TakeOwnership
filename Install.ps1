@@ -143,7 +143,9 @@ $script:ProfileJson = @'
     "HKCR\\*\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
     "HKCR\\Directory\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
     "HKCR\\Directory\\Background\\shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
-    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership"
+    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\WindowsUtilities\\shell\\ManageOwnership",
+    "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\WhoIsUsingThis",
+    "HKCR\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\WhoIsUsingThis"
   ],
   "registry_values": [
     {
@@ -217,30 +219,6 @@ $script:ProfileJson = @'
       "name": "(default)",
       "type": "REG_SZ",
       "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
-    },
-    {
-      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
-      "name": "MUIVerb",
-      "type": "REG_SZ",
-      "value": "Take Ownership"
-    },
-    {
-      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
-      "name": "Icon",
-      "type": "REG_SZ",
-      "value": "imageres.dll,-5324"
-    },
-    {
-      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
-      "name": "NoWorkingDirectory",
-      "type": "REG_SZ",
-      "value": ""
-    },
-    {
-      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership\\command",
-      "name": "(default)",
-      "type": "REG_SZ",
-      "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
     }
   ],
   "registry_verify": [
@@ -256,11 +234,6 @@ $script:ProfileJson = @'
     },
     {
       "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership\\command",
-      "name": "(default)",
-      "expected": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
-    },
-    {
-      "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "expected": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
     }
