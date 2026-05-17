@@ -170,3 +170,12 @@
 - Guardrail/rule: Until this repo gets a real bundled `.ico`, use `imageres.dll,-5324` for every `SystemTools > Windows > Take Ownership` branch. All commands must use `SilentOwnership.vbs`, with `%1` for file/folder and `%V` for background.
 - Files affected: `Install.ps1`, `PROJECT_RULES.md`, `D:\Users\joty79\scripts\InstallerCore\profiles\TakeOwnership.json`.
 - Validation/tests run: Parser validation passed; local-source update completed; HKCU readback confirmed all four target branches use `imageres.dll,-5324` and `SilentOwnership.vbs`.
+
+### Entry - 2026-05-17 (Bundled TakeOwnership icon)
+
+- Date: 2026-05-17
+- Problem: `TakeOwnership` now has a real custom icon supplied at `Documents\Icons\TakeOwnership.ico`.
+- Root cause: Earlier `TakeOwnership` icon work had to use the `imageres.dll,-5324` fallback because no bundled repo icon existed.
+- Guardrail/rule: Bundle the custom icon as `assets\icons\TakeOwnership.ico` and use `{InstallRoot}\assets\icons\TakeOwnership.ico` for every `SystemTools > Windows > Take Ownership` branch. Do not point registry values at the user's `Documents` folder.
+- Files affected: `assets\icons\TakeOwnership.ico`, `Install.ps1`, `PROJECT_RULES.md`, `D:\Users\joty79\scripts\InstallerCore\profiles\TakeOwnership.json`.
+- Validation/tests run: Parser validation passed; local-source update completed; HKCU readback confirmed all four target branches point to the installed bundled icon; Explorer restarted.

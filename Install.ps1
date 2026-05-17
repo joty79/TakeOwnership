@@ -43,7 +43,8 @@ $script:ProfileJson = @'
     "Manage_Ownership.ps1",
     "SilentOwnership.vbs",
     "Manage_Ownership.reg",
-    "assets\\RunAsTI\\RunAsTI.ps1"
+    "assets\\RunAsTI\\RunAsTI.ps1",
+    "assets\\icons\\TakeOwnership.ico"
   ],
   "deploy_entries": [
     "Install.ps1",
@@ -51,7 +52,8 @@ $script:ProfileJson = @'
     "Manage_Ownership.ps1",
     "SilentOwnership.vbs",
     "Manage_Ownership.reg",
-    "assets\\RunAsTI\\RunAsTI.ps1"
+    "assets\\RunAsTI\\RunAsTI.ps1",
+    "assets\\icons\\TakeOwnership.ico"
   ],
   "preserve_existing_entries": null,
   "verify_core_files": [
@@ -59,7 +61,8 @@ $script:ProfileJson = @'
     "app-metadata.json",
     "Manage_Ownership.ps1",
     "SilentOwnership.vbs",
-    "assets\\RunAsTI\\RunAsTI.ps1"
+    "assets\\RunAsTI\\RunAsTI.ps1",
+    "assets\\icons\\TakeOwnership.ico"
   ],
   "migration_copy_entries": [
     "ACL_Backups",
@@ -154,7 +157,7 @@ $script:ProfileJson = @'
       "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "Icon",
       "type": "REG_SZ",
-      "value": "imageres.dll,-5324"
+      "value": "{InstallRoot}\\assets\\icons\\TakeOwnership.ico"
     },
     {
       "key": "HKCU\\Software\\Classes\\*\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
@@ -178,7 +181,7 @@ $script:ProfileJson = @'
       "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "Icon",
       "type": "REG_SZ",
-      "value": "imageres.dll,-5324"
+      "value": "{InstallRoot}\\assets\\icons\\TakeOwnership.ico"
     },
     {
       "key": "HKCU\\Software\\Classes\\Directory\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
@@ -202,7 +205,7 @@ $script:ProfileJson = @'
       "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "Icon",
       "type": "REG_SZ",
-      "value": "imageres.dll,-5324"
+      "value": "{InstallRoot}\\assets\\icons\\TakeOwnership.ico"
     },
     {
       "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
@@ -226,7 +229,7 @@ $script:ProfileJson = @'
       "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "Icon",
       "type": "REG_SZ",
-      "value": "imageres.dll,-5324"
+      "value": "{InstallRoot}\\assets\\icons\\TakeOwnership.ico"
     },
     {
       "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
