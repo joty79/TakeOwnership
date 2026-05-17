@@ -161,3 +161,12 @@
 - Guardrail/rule: `TakeOwnership` may register under `SystemTools > Windows` for file, folder, `Directory\Background`, and `DesktopBackground` branches while the Windows submenu is kept to the verified six-entry layout. Do not clean sibling `WhoIsUsingThis` keys.
 - Files affected: `Install.ps1`, `D:\Users\joty79\scripts\InstallerCore\profiles\TakeOwnership.json`, `PROJECT_RULES.md`.
 - Validation/tests run: Parser validation passed; local-source update completed; HKCU readback confirmed `TakeOwnership` exists under both `Directory\Background` and `DesktopBackground` `SystemTools > Windows`.
+
+### Entry - 2026-05-17 (Consistent SystemTools icon and launcher)
+
+- Date: 2026-05-17
+- Problem: `TakeOwnership` showed different icons across `SystemTools > Windows` branches and background entries referenced missing `TakeOwnership.vbs`.
+- Root cause: The generated profile mixed `imageres.dll,-5324` with nonexistent `{InstallRoot}\assets\icons\TakeOwnership.ico`, and the restored background entries used an invalid launcher name.
+- Guardrail/rule: Until this repo gets a real bundled `.ico`, use `imageres.dll,-5324` for every `SystemTools > Windows > Take Ownership` branch. All commands must use `SilentOwnership.vbs`, with `%1` for file/folder and `%V` for background.
+- Files affected: `Install.ps1`, `PROJECT_RULES.md`, `D:\Users\joty79\scripts\InstallerCore\profiles\TakeOwnership.json`.
+- Validation/tests run: Parser validation passed; local-source update completed; HKCU readback confirmed all four target branches use `imageres.dll,-5324` and `SilentOwnership.vbs`.

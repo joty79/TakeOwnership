@@ -202,7 +202,7 @@ $script:ProfileJson = @'
       "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "Icon",
       "type": "REG_SZ",
-      "value": "{InstallRoot}\\assets\\icons\\TakeOwnership.ico"
+      "value": "imageres.dll,-5324"
     },
     {
       "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
@@ -214,7 +214,7 @@ $script:ProfileJson = @'
       "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "type": "REG_SZ",
-      "value": "wscript.exe \"{InstallRoot}\\TakeOwnership.vbs\" \"%V\""
+      "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
     },
     {
       "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
@@ -226,7 +226,7 @@ $script:ProfileJson = @'
       "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
       "name": "Icon",
       "type": "REG_SZ",
-      "value": "{InstallRoot}\\assets\\icons\\TakeOwnership.ico"
+      "value": "imageres.dll,-5324"
     },
     {
       "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership",
@@ -238,7 +238,7 @@ $script:ProfileJson = @'
       "key": "HKCU\\Software\\Classes\\DesktopBackground\\Shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership\\command",
       "name": "(default)",
       "type": "REG_SZ",
-      "value": "wscript.exe \"{InstallRoot}\\TakeOwnership.vbs\" \"%V\""
+      "value": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
     }
   ],
   "registry_verify": [
@@ -255,7 +255,7 @@ $script:ProfileJson = @'
     {
       "key": "HKCU\\Software\\Classes\\Directory\\Background\\shell\\SystemTools\\shell\\Windows\\shell\\TakeOwnership\\command",
       "name": "(default)",
-      "expected": "wscript.exe \"{InstallRoot}\\TakeOwnership.vbs\" \"%V\""
+      "expected": "wscript.exe \"{InstallRoot}\\SilentOwnership.vbs\" \"%V\""
     }
   ],
   "wrapper_patches": null
