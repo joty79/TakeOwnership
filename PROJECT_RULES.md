@@ -152,3 +152,12 @@
 - Guardrail/rule: `TakeOwnership` must not write either `DesktopBackground` or `Directory\Background` entries under `SystemTools > Windows`; keep it on file and folder targets only, with cleanup for old background keys.
 - Files affected: `Install.ps1`, `app-metadata.json`, `CHANGELOG.md`, `PROJECT_RULES.md`, `D:\Users\joty79\scripts\InstallerCore\profiles\TakeOwnership.json`.
 - Validation/tests run: Parser validation passed; local-source update completed; HKCU registry readback confirmed `Directory\Background\shell\SystemTools\shell\Windows\shell\TakeOwnership` is absent.
+
+### Entry - 2026-05-17 (Restore SystemTools background ownership entry)
+
+- Date: 2026-05-17
+- Problem: After removing SafeMode/power actions from `SystemTools`, the old no-background rule made the restored `Windows` submenu incomplete.
+- Root cause: The earlier restriction was a workaround for the failed SafeMode-in-SystemTools layout, not a permanent tool behavior requirement.
+- Guardrail/rule: `TakeOwnership` may register under `SystemTools > Windows` for file, folder, `Directory\Background`, and `DesktopBackground` branches while the Windows submenu is kept to the verified six-entry layout. Do not clean sibling `WhoIsUsingThis` keys.
+- Files affected: `Install.ps1`, `D:\Users\joty79\scripts\InstallerCore\profiles\TakeOwnership.json`, `PROJECT_RULES.md`.
+- Validation/tests run: Parser validation passed; local-source update completed; HKCU readback confirmed `TakeOwnership` exists under both `Directory\Background` and `DesktopBackground` `SystemTools > Windows`.
